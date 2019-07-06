@@ -1,5 +1,7 @@
 %% Computer Vision Challenge 2019
 
+dbstop if error
+
 % Group number:
 group_number = 10;
 
