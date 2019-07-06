@@ -1,4 +1,4 @@
-function [DbasicSubpixel] = dmap(leftI,rightI)
+function [D] = dmap(leftI,rightI)
 %DMAP Summary of this function goes here
 %   Detailed explanation goes here
 

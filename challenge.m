@@ -18,14 +18,14 @@ tic;
 
 %% Disparity Map
 % Specify path to scene folder containing img0 img1 and calib
-scene_path = 'test/motorcycle';
+scene_path = 'test/sword';
  
 % Calculate disparity map and Euclidean motion
 [D, R, T] = disparity_map(scene_path);
 
 %% Validation
 % Specify path to ground truth disparity map
-gt_path = 'test/motorcycle/disp0.pfm';
+gt_path = [scene_path '/disp0.pfm'];
 
 % Load the ground truth
 G = readpfm(gt_path);
@@ -45,5 +45,8 @@ disp(elapsed_time);
 
 
 %% Display Disparity
-figure,
-imshow(D);
+figure('Name','Disparity Map','NumberTitle','off');
+title 'Disparity Map';
+imshow(D, disparityRange);
+colormap(gca,jet);
+colorbar;

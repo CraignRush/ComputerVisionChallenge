@@ -1,7 +1,9 @@
-function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen, K1, K2)
+function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen, K1, K2, do_plot)
 
-    do_plot = false;
-
+    if nargin < 8
+        do_plot = false;
+    end
+    
     %% Preparation
 
     T_cell = {T1, T2, T1, T2};
@@ -84,7 +86,8 @@ function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen
     
     if do_plot
         % Draw P1 in figure and label
-        figure,
+        figure('Name','3D Recunstruction','NumberTitle','off');
+        title '3D Reconstruction';
         hold on
         for i = 1:length(P1)
             scatter3(P1(1,i), P1(2,i), P1(3,i), '.k');

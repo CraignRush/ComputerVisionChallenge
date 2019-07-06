@@ -157,7 +157,8 @@ function Korrespondenzen = punkt_korrespondenzen(I1,I2,Mpt1,Mpt2,varargin)
     %% Zeige die Korrespondenzpunktpaare an
     if do_plot
         % create figure
-        figure;
+        figure('Name','Correspondence Estimation','NumberTitle','off');
+        title 'Correspondence Estimation';
         % show image 1
         imshow(uint8(I1));
         % keep figure for overblending
