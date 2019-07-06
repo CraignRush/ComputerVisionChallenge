@@ -51,4 +51,5 @@ function [D, R, T] = disparity_map(scene_path)
     
     %% Calculate Disparity Map
     D = dmap(im0g, im1g);
+    
 end

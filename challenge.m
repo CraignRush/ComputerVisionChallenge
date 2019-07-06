@@ -1,44 +1,47 @@
 %% Computer Vision Challenge 2019
 
 % Group number:
-group_number = 0;
+group_number = 10;
 
 % Group members:
 % members = {'Max Mustermann', 'Johannes Daten'};
-members = {};
+members = {'Michael Maas', 'Alexander Schmaus', 'Johann Brenner', 'Daniel Milz'};
 
 % Email-Address (from Moodle!):
 % mail = {'ga99abc@tum.de', 'daten.hannes@tum.de'};
-mail = {};
+mail = {'ga96vur@mytum.de', 'ga96fin@mytum.de', 'ga78zan@mytum.de', 'ga58huv@mytum.de'};
 
 %% Start timer here
-
+tic;
 
 %% Disparity Map
 % Specify path to scene folder containing img0 img1 and calib
-% scene_path = ''
-% 
+scene_path = 'test/motorcycle';
+ 
 % Calculate disparity map and Euclidean motion
-% [D, R, T] = disparity_map(scene_path)
+[D, R, T] = disparity_map(scene_path);
 
 %% Validation
 % Specify path to ground truth disparity map
-% gt_path = 'paht\to\ground\truth'
-%
+gt_path = 'test/motorcycle/disp0.pfm';
+
 % Load the ground truth
-% G = 
-% 
+G = readpfm(gt_path);
+ 
 % Estimate the quality of the calculated disparity map
-% p = validate_dmap(D, G)
+p = validate_dmap(D, G);
 
 %% Stop timer here
-elapsed_time = 0;
+elapsed_time = toc;
 
 
 %% Print Results
-% R, T, p, elapsed_time
+disp(R);
+disp(T);
+disp(p);
+disp(elapsed_time);
 
 
 %% Display Disparity
-
-
+figure,
+imshow(D);

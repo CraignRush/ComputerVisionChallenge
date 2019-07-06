@@ -2,7 +2,6 @@ function [DbasicSubpixel] = dmap(leftI,rightI)
 %DMAP Summary of this function goes here
 %   Detailed explanation goes here
 
-
 DbasicSubpixel = zeros(size(leftI), 'single');
 
 % The disparity range defines how many pixels away from the block's location
@@ -10,7 +9,7 @@ DbasicSubpixel = zeros(size(leftI), 'single');
 disparityRange = 50;
 
 % Define the size of the blocks for block matching.
-halfBlockSize = 3;
+halfBlockSize = 10; %3
 blockSize = 2 * halfBlockSize + 1;
 
 % Get the image dimensions.
