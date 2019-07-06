@@ -1,4 +1,4 @@
-function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen, K)
+function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen, K1, K2)
 
     do_plot = false;
 
@@ -10,22 +10,19 @@ function [T, R, lambda, M1, M2] = rekonstruktion(T1, T2, R1, R2, Korrespondenzen
     R_cell = {R1, R1, R2, R2};
     
     % Anzahl der Korrespondenzpunktpaare
-    N = length(Korrespondenzen);
+    N = size(Korrespondenzen,2);
     % Korrespondenzen -> homogene Koordinaten
     x1_ = [Korrespondenzen(1:2,:); ones(1, N)];
     x2_ = [Korrespondenzen(3:4,:); ones(1, N)];
-    
+
     % x1,x2 kallibrieren
-    x1 = K \ x1_;
-    x2 = K \ x2_;
+    x1 = K1 \ x1_;
+    x2 = K2 \ x2_;
     
     % Intitalisiere d_cell
     d_cell = {zeros(N,2),zeros(N,2),zeros(N,2),zeros(N,2)};
     
     %% Rekonstruktion
-
-    % Get N
-    N = length(Korrespondenzen);
     
     % Iterate over T_cell and R_cell
     for i = 1:4

@@ -1,4 +1,4 @@
-function [EF] = achtpunktalgorithmus(Korrespondenzen, K)
+function [EF] = achtpunktalgorithmus(Korrespondenzen, K1, K2)
     % Diese Funktion berechnet die Essentielle Matrix oder Fundamentalmatrix
     % mittels 8-Punkt-Algorithmus, je nachdem, ob die Kalibrierungsmatrix 'K'
     % vorliegt oder nicht
@@ -8,8 +8,8 @@ function [EF] = achtpunktalgorithmus(Korrespondenzen, K)
 
     % Wenn K vorliegt
     if(nargin>1)
-        x1 = K \ x1;
-        x2 = K \ x2;
+        x1 = K1 \ x1;
+        x2 = K2 \ x2;
     end
     
     % Berechne A mit dem Kronecker produkt (x1 op x2)...

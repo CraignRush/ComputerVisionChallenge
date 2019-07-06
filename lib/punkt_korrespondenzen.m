@@ -102,15 +102,16 @@ function Korrespondenzen = punkt_korrespondenzen(I1,I2,Mpt1,Mpt2,varargin)
     
     % create empty matrix unsorted_index for later sorting with [value, index]
     unsorted_index = zeros(size(Mat_feat_1,2)*size(Mat_feat_2,2),2);
-    
+
     % go through all correlation combinations and fill the ncc matrix
     for i_y = 1:size(Mat_feat_1,2)
         for i_x = 1:size(Mat_feat_2,2)
             % calculate ncc
             entry = 1/(N-1) * Mat_feat_2(:,i_x)' * Mat_feat_1(:,i_y);
-            
+
             % asign NCC matrix entry with entry if entry >= min_corr
-            NCC_matrix(i_y, i_x) = (entry>=min_corr)*entry;
+            %NCC_matrix(i_y, i_x) = (entry>=min_corr)*entry;
+            NCC_matrix(i_y, i_x) = entry;
             
             % assign to unsorted_index
             unsorted_index(i_x+(i_y-1)*size(Mat_feat_2,2),:) = [NCC_matrix(i_y, i_x), (i_y-1)*size(Mat_feat_2,2)+i_x];
@@ -146,7 +147,7 @@ function Korrespondenzen = punkt_korrespondenzen(I1,I2,Mpt1,Mpt2,varargin)
         NCC_matrix(:,idx_1) = 0;
         
         % add to matrix
-        Korrespondenzen(:,i_korr) = [Mpt1(:,idx_1);Mpt2(:,idx_2)];
+        Korrespondenzen(:,i_korr) = [Mpt1(:,idx_2);Mpt2(:,idx_1)];
         
         i_korr = i_korr+1;
     end
