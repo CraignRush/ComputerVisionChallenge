@@ -39,4 +39,6 @@ function [D, R, T] = disparity_map(scene_path)
     %% Calculate correct euklidian transformation and 3D reconstruction
     [T, R,~,~] = rekonstruktion(T1, T2, R1, R2, correspondence_robust, K);
     
+    %% Calculate Disparity Map
+    D = dmap(im0g, im1g);
 end
