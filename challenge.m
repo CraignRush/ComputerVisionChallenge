@@ -29,7 +29,7 @@ gt_path = 'test/motorcycle/disp0.pfm';
 G = readpfm(gt_path);
  
 % Estimate the quality of the calculated disparity map
-p = validate_dmap(D, G);
+p = verify_dmap(D, G);
 
 %% Stop timer here
 elapsed_time = toc;
