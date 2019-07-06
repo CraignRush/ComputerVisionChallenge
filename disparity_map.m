@@ -33,4 +33,10 @@ function [D, R, T] = disparity_map(scene_path)
     %% Calculate essential matrix E
     E = achtpunktalgorithmus(correspondence_robust,K);
     
+    %% Calculate possible T and R
+    [T1, R1, T2, R2, ~, ~] = TR_aus_E(E);
+    
+    %% Calculate correct euklidian transformation and 3D reconstruction
+    [T, R,~,~] = rekonstruktion(T1, T2, R1, R2, correspondence_robust, K);
+    
 end
