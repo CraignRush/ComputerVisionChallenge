@@ -19,10 +19,18 @@ function [D, R, T] = disparity_map(scene_path)
     evalc(cal);
     
     %% Feature extraction
-    feature0 = harris_detektor( im0g );
+    % Optionally add: 'segment_length',9,'k',0.05,'min_dist',50,'N',20
+    feature0 = harris_detektor( im0g ); 
     feature1 = harris_detektor( im1g );
     
-    %% Correspondence matrix
+    %% Correspondence estimation
+    % Optionally adD: 'window_length',25,'min_corr', 0.90
     correspondence = punkt_korrespondenzen(im0g,im1g,feature0,feature1);
+    
+    %%  Find robust correspondence point pairs with RANSAC-algorithm
+    correspondence_robust = F_ransac(correspondence, 'tolerance', 0.04);
+    
+    %% Calculate essential matrix E
+    E = achtpunktalgorithmus(correspondence_robust,K);
     
 end
