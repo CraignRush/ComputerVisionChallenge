@@ -94,10 +94,17 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         cam0, cam1, do_debug);
     
     %% Calculate Disparity Map
-    % D = dmap(im0g, im1g);
-    D = disparity(im0g, im1g);
+   
+    if do_debug
+        D = disparity(im0g, im1g);
+    else
+        D = dmap(im0g, im1g);
+    end
+    
+    % Scale
     D(D < -10) = -10;
     D = (D + 10) ./ max(max(D + 10)) * 255;
+    
 %     if do_debug
 %         figure('Name','Disparity Map','NumberTitle','off');
 %         title 'Disparity Map';
