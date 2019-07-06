@@ -5,8 +5,8 @@ function p = verify_dmap(D, G)
 addpath(genpath('lib'));
 
 %% Check if D and G are in range [0 255]
-assert(any(any((G <= 255 & G >= 0) == 0)), 'G has to be in range [0 255]');
-assert(any(any((D <= 255 & D >= 0) == 0)), 'D has to be in range [0 255]');
+assert(~any(any((G <= 255 & G >= 0) == 0)), 'G has to be in range [0 255]');
+assert(~any(any((D <= 255 & D >= 0) == 0)), 'D has to be in range [0 255]');
 
 %% Calculate psnr
 p = psnr(D,G);

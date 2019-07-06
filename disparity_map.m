@@ -27,11 +27,11 @@ function [D, R, T] = disparity_map(scene_path)
     
     if do_debug
         figure('Name','Harris Detection','NumberTitle','off');
+        title 'Harris detection';
         subplot(121); imshow(uint8(im0g)); hold on;
         plot(feature0(1,:),feature0(2,:),'go'); 
         subplot(122); imshow(uint8(im1g)); hold on;
-        plot(feature1(1,:),feature1(2,:),'go'); 
-        title 'Harris detection';
+        plot(feature1(1,:),feature1(2,:),'go');  
     end
     
     %% Correspondence estimation
@@ -67,10 +67,9 @@ function [D, R, T] = disparity_map(scene_path)
     
     %% Calculate Disparity Map
     % D = dmap(im0g, im1g);
-    disparityRange = [-6 10];
-    D = disparity(im0g, im1g, 'BlockSize',15, ...
-        'DisparityRange',disparityRange);
-    
+    D = disparity(im0g, im1g);
+    D(D < -10) = -10;
+    D = (D + 10) ./ max(max(D + 10)) * 255;
 %     if do_debug
 %         figure('Name','Disparity Map','NumberTitle','off');
 %         title 'Disparity Map';
