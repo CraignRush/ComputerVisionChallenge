@@ -38,10 +38,10 @@ elapsed_time = toc;
 
 
 %% Print Results
-disp(R);
-disp(T);
-disp(p);
-disp(elapsed_time);
+disp('Rotation R:'); disp(R);
+disp('Translation T:'); disp(T);
+disp('PSNR p: '); disp(p);
+disp('Elapsed Time: '); disp(elapsed_time);
 
 
 %% Display Disparity
