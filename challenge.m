@@ -21,7 +21,7 @@ tic;
 scene_path = 'test/sword';
  
 % Calculate disparity map and Euclidean motion
-[D, R, T] = disparity_map(scene_path);
+[D, R, T] = disparity_map(scene_path, 'do_debug', true);
 
 %% Validation
 % Specify path to ground truth disparity map
@@ -30,6 +30,7 @@ gt_path = [scene_path '/disp0.pfm'];
 % Load the ground truth
 G = readpfm(gt_path);
 G = (G - min(min(G))) ./ max(max((G - min(min(G))))) * 255;
+
 % Estimate the quality of the calculated disparity map
 p = verify_dmap(D, G);
 

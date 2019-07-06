@@ -1,14 +1,42 @@
-function [D, R, T] = disparity_map(scene_path)
+function [D, R, T] = disparity_map(scene_path, varargin)
     % This function receives the path to a scene folder and calculates the
     % disparity map of the included stereo image pair. Also, the Euclidean
     % motion is returned as Rotation R and Translation T.
     
     addpath(genpath('lib')); 
-    do_debug = true;
-    dbstop if error
+    
+    %% Input parser
+    P = inputParser;
+    
+    % Liste der optionalen Parameter
+    P.addOptional('do_debug', false, @islogical)
+    
+    % Lese den Input
+    P.parse(varargin{:});
+    
+    do_debug = P.Results.do_debug;
     
     %% Do some typical error checking here
+    if do_debug
+        dbstop if error;
+    end
     
+    if ~exist(scene_path,'dir')
+        error(['Please provide an existing scene path. "', scene_path, ...
+            '" does not exists according to Matlab.']);
+    end
+    
+    if ~exist([scene_path '/im0.png'],'file')
+        error('Please provide a path with a file called: im0.png');
+    end
+    
+    if ~exist([scene_path '/im1.png'],'file')
+        error('Please provide a path with a file called: im1.png');
+    end
+    
+    if ~exist([scene_path '/calib.txt'],'file')
+        error('Please provide a path with a file called: calib.txt');
+    end
     
     %% Load images and calibration file from scene folder
     im0 = imread([scene_path '/im0.png']);
