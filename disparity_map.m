@@ -10,7 +10,7 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     
     % Liste der optionalen Parameter
     P.addOptional('do_debug', false, @islogical);
-    P.addOptional('method','daniel',@isstring);
+    P.addOptional('method','daniel',@ischar);
     
     % Lese den Input
     P.parse(varargin{:});
@@ -107,6 +107,8 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     fm_method = 'NN';
     if strcmp(method, 'matlabgrader')
         correspondence = correspondence_matlabgrader(im0g,im1g,feature0, feature1);
+    elseif strcmp(method,'jo')
+        correspondence = punkt_korrespondenzen_jo(im0g,im1g,feature0,feature1);
     elseif strcmp(method,'daniel')
         sig0 = correspondence_daniel(im0g,im0,feature0,'gray_weight',6,'pos_weight',1);
         sig1 = correspondence_daniel(im1g,im1,feature1,'gray_weight',6,'pos_weight',1);
@@ -119,16 +121,26 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         sig0 = correspondence_lpm(im0g,feature0);
         sig1 = correspondence_lpm(im1g,feature1);
         fm_method = 'NN';
+    elseif strcmp(method,'all')
+        correspondence = [ ...
+            correspondence_matlabgrader(im0g,im1g,feature0, feature1), ...
+            punkt_korrespondenzen_jo(im0g,im1g,feature0,feature1), ...
+            find_matches(correspondence_daniel(im0g,im0,feature0,...
+               'gray_weight',6,'pos_weight',1),...
+               correspondence_daniel(im1g,im1,feature1,...
+               'gray_weight',6,'pos_weight',1),feature0,feature1,'NN'), ...
+            find_matches(correspondence_lpm(im0g,feature0), ...
+               correspondence_lpm(im1g,feature1),feature0,feature1,'NN')...
+         ];   
+    else
+        error('Undefined method!');
     end
     
     if ~exist('correspondence','var')
         correspondence = find_matches(sig0,sig1,feature0,feature1,fm_method);
     end
-    %% Correspondence estimation - Find Robust Match
-    
-    %  Find robust correspondence point pairs with RANSAC-algorithm
-    correspondence = F_ransac(correspondence, 'tolerance', 0.4);
-    
+
+    %%
     if do_debug
         tab = [tab,uitab(tabgp, 'Title', 'Correspondence')];
         tax = [tax,axes('Parent', tab(end))];
@@ -145,6 +157,27 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         end
     end
 
+    %% Correspondence estimation - Find Robust Match
+    %  Find robust correspondence point pairs with RANSAC-algorithm
+    correspondence = F_ransac(correspondence, 'tolerance', 1);
+    
+    if do_debug
+        tab = [tab,uitab(tabgp, 'Title', 'Correspondence (Robust)')];
+        tax = [tax,axes('Parent', tab(end))];
+
+        title 'Correspondence Estimation';
+
+        imshow(uint8([im0g,im1g]),'Parent',tax(end)); hold on;
+        plot(tax(end),[correspondence(1,:),correspondence(3,:)+size(im0g,2)],[correspondence(2,:),correspondence(4,:)],'go');
+        % plot the line
+        for i=1:size(correspondence,2)
+            pt1 = [correspondence(1,i), correspondence(3,i)+size(im0g,2)];
+            pt2 = [correspondence(2,i), correspondence(4,i)];
+            line(tax(end),pt1,pt2);
+        end
+    end
+
+    
     %% Calculate essential matrix E
     E = achtpunktalgorithmus(correspondence,cam0, cam1);
     
@@ -152,9 +185,46 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     [T1, R1, T2, R2, ~, ~] = TR_aus_E(E);
     
     %% Calculate correct euklidian transformation and 3D reconstruction
-    [T, R,~,~] = rekonstruktion(T1, T2, R1, R2, correspondence, ...
+    [T, R,lambda,~,~] = rekonstruktion(T1, T2, R1, R2, correspondence, ...
         cam0, cam1, false);
 
+    x1 = cam0 \ [correspondence(1:2,:); ones(1, size(correspondence,2))];
+    P1 = bsxfun(@times, lambda(:,1)', x1);
+    if do_debug
+        tab = [tab,uitab(tabgp, 'Title', 'Reconstruction')];
+        tax = [tax,axes('Parent', tab(end))];
+        title '3D Reconstruction';
+        hold on
+        for i = 1:length(P1)
+            scatter3(tax(end),P1(1,i), P1(2,i), P1(3,i), '.k');
+            text(tax(end),P1(1,i), P1(2,i), P1(3,i),num2str(i));
+        end
+
+        % Store edge values
+        camC1 = [-0.2,0.2,0.2,-0.2;0.2,0.2,-0.2,-0.2;1,1,1,1];
+
+        % Calculate values for C2 via euklidian transformations...
+        camC2 = R \ (bsxfun(@plus, camC1, -T));
+
+        % Calculate camera plane positions (closing the plane)
+        cam1_plane = camC1(:,[1:4 1]);
+        cam2_plane = camC2(:,[1:4 1]);
+
+        % Plot camera plane
+        plot3(tax(end),cam1_plane(1,:), cam1_plane(2,:), cam1_plane(3,:), 'b');
+        text(tax(end),cam1_plane(1,4), cam1_plane(2,4), cam1_plane(3,4), 'C1');
+        plot3(tax(end),cam2_plane(1,:), cam2_plane(2,:), cam2_plane(3,:), 'r');
+        text(tax(end),cam2_plane(1,4), cam2_plane(2,4), cam2_plane(3,4), 'C2');
+
+
+        % Set camera position
+        campos(tax(end),[43, -22, -87]);
+        camup(tax(end),[0,-1,0]);
+
+        % Add grid and axis label
+        xlabel('x'); ylabel('y'); zlabel('z');
+        grid on;
+    end
     
     %% Calculate Disparity Map
    

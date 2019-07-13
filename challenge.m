@@ -23,7 +23,7 @@ scenes = {'test/motorcycle', 'test/playground', ...
 scene_path = scenes{1};
  
 % Calculate disparity map and Euclidean motion
-[D, R, T] = disparity_map(scene_path, 'do_debug', true);
+[D, R, T] = disparity_map(scene_path, 'do_debug', true,'method', 'jo');
 
 %% Validation
 % Specify path to ground truth disparity map

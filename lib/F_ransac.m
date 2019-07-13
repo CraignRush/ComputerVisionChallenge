@@ -24,7 +24,7 @@ function [Korrespondenzen_robust, F] = F_ransac(Korrespondenzen, varargin)
     
     %% RANSAC Algorithmus Vorbereitung
     % Anzahl der benoetigten Puntke
-    k = 8;
+    k = 10;
     
     % Die Iterationszahl
     s = ceil( log(1-p)/log(1-(1-epsilon)^k) );
@@ -42,7 +42,7 @@ function [Korrespondenzen_robust, F] = F_ransac(Korrespondenzen, varargin)
     
     %% RANSAC Algorithmus
     
-    for i = 1:s
+    for i = 1:s*10
         % Fundamentalmatrix F aus k zufaellig gewaelten Korrespondenzpunktpaaren
         F = achtpunktalgorithmus(Korrespondenzen(:,randperm(length(Korrespondenzen),k)));
         
