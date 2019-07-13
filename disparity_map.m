@@ -70,23 +70,22 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     %% Correspondence estimation
     % Optionally adD: 'window_length',25,'min_corr', 0.90
     
-    % correspondence = punkt_korrespondenzen2(im0g,im1g,feature0,...
-    % feature1, 'min_corr', 0.9, 'do_plot', do_debug);
+    % correspondence = punkt_korrespondenzen(im0g,im1g,feature0,feature1, 'min_corr', 0.9, 'do_plot', do_debug);
     
-    correspondence = punkt_korrespondenzen2(im0g,im1g,double(im0), ...
-        double(im1),feature0,feature1, 'min_corr', 0.9, ...
-        'do_plot', do_debug);
+    correspondence = punkt_korrespondenzen2(im0g,im1g,double(im0),double(im1),feature0,feature1, 'min_corr', 0.9,'do_plot', do_debug);
+   
+    % correspondence = correspondence_ct(im0g,im1g,feature0,feature1,'do_plot', do_debug,'window_size',9);
+   
     %%  Find robust correspondence point pairs with RANSAC-algorithm
-    correspondence = F_ransac(correspondence, 'tolerance', 0.04);
+    correspondence = F_ransac(correspondence, 'tolerance', 0.4);
     if do_debug
         figure('Name','Robust Correspondence Estimation','NumberTitle','off');
         title 'Robust Correspondence Estimation';
-        imshow(uint8(im0g)); hold on
+        imshow(uint8([im0g,im1g])); hold on
         plot(correspondence(1,:),correspondence(2,:),'go');
-        imshow(uint8(im1g)); alpha(0.5);
-        plot(correspondence(3,:),correspondence(4,:),'ro')
+        plot(correspondence(3,:)+size(im0g,2),correspondence(4,:),'ro')
         for i=1:size(correspondence,2)
-            pt1 = [correspondence(1,i), correspondence(3,i)];
+            pt1 = [correspondence(1,i), correspondence(3,i)+size(im0g,2)];
             pt2 = [correspondence(2,i), correspondence(4,i)];
             line(pt1,pt2);
         end

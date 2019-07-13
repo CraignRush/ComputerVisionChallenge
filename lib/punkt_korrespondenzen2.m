@@ -75,29 +75,34 @@ corresp = inf(length(feature0),length(feature1));
 
 for i1 = 1:length(feature0)
     for i2 = 1:length(feature1)
-        corresp(i1,i2) = norm(gradients0(i1,:)/norm(gradients0(i1,:)) - ...
-            gradients1(i2,:)/norm(gradients1(i2,:)),1);
+        corresp(i1,i2) = norm(gradients0(i1,:)/norm(gradients0(i1,:))-...
+            gradients1(i2,:)/norm(gradients1(i2,:)));
     end
 end
 %%
-[vals, ~] = min(corresp,[],1);
+[~,sindxs] = sort(reshape(corresp,[],1));
 
-%indxs(vals>10) = []; % Select threshold
-%vals(vals>10) = [];
-[svals,sindxs] = sort(vals);
 %%
 max_corresp = 100;
-correspons = zeros(min([max_corresp,length(svals)]),2);
-for i = 1:size(correspons,1)
-    correspons(i,1) = sindxs(i);
-    [~, j] = min(corresp(:,sindxs(i)));
-    correspons(i,2) = j;
+correspondence_ = zeros(4,min([max_corresp,length(sindxs)]));
+for i = 1:size(correspondence_,2)
+    [i2,j2] = ind2sub(size(corresp),sindxs(i));
+    correspondence_(1:2,i) = feature0(:,i2);
+    correspondence_(3:4,i) = feature1(:,j2);
 end
-
 %%
-correspondence_ = zeros(4,size(correspons,1));
-for i = 1:size(correspons,1)
-    correspondence_(:,i) = [feature0(:,correspons(i,2)); feature1(:,correspons(i,1))];
+
+if do_plot
+figure('Name','Correspondence (Own)', 'NumberTitle','off');
+title 'Own Correspondence Estimation';
+imshow(uint8([im0g,im1g])); hold on;
+plot([correspondence_(1,:),correspondence_(3,:)+size(im0g,2)], ...
+    [correspondence_(2,:),correspondence_(4,:)],'go');
+for i=1:size(correspondence_,2)
+    pt1 = [correspondence_(1,i), correspondence_(3,i)+size(im0g,2)];
+    pt2 = [correspondence_(2,i), correspondence_(4,i)];
+    line(pt1,pt2);
+end
 end
 
 end
