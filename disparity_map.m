@@ -50,23 +50,32 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     
     %% Feature extraction
     % Optionally add: 'segment_length',9,'k',0.05,'min_dist',50,'N',20
-    feature0 = harris_detektor( im0g, 'segment_length',9,'k',0.05,'min_dist',30,'N',20 ); 
-    feature1 = harris_detektor( im1g, 'segment_length',9,'k',0.05,'min_dist',30,'N',20 );
+    im0bw = im0g; im0bw(im0bw> 128) = 255; 
+    im1bw = im1g; im1bw(im1bw<=128) =   0;
+    
+    feature0 = harris_detektor( im0bw, 'segment_length', 9, 'k', 0.05, ...
+        'min_dist', 30, 'N', 20 ); 
+    feature1 = harris_detektor( im1bw, 'segment_length', 9, 'k', 0.05, ...
+        'min_dist', 30, 'N', 20 );
     
     if do_debug
         figure('Name','Harris Detection','NumberTitle','off');
         title 'Harris detection';
-        subplot(121); imshow(uint8(im0g)); hold on;
-        plot(feature0(1,:),feature0(2,:),'go'); 
-        subplot(122); imshow(uint8(im1g)); hold on;
-        plot(feature1(1,:),feature1(2,:),'go');  
+        ax = subplot(1,2,1); imshow(uint8(im0g)); hold on;
+        plot(ax, feature0(1,:),feature0(2,:),'go'); 
+        ax = subplot(1,2,2); imshow(uint8(im1g)); hold on;
+        plot(ax, feature1(1,:),feature1(2,:),'go');  
     end
     
     %% Correspondence estimation
     % Optionally adD: 'window_length',25,'min_corr', 0.90
-    correspondence = punkt_korrespondenzen(im0g,im1g,feature0,feature1, ...
-        'min_corr', 0.7, 'do_plot', do_debug);
     
+    % correspondence = punkt_korrespondenzen2(im0g,im1g,feature0,...
+    % feature1, 'min_corr', 0.9, 'do_plot', do_debug);
+    
+    correspondence = punkt_korrespondenzen2(im0g,im1g,double(im0), ...
+        double(im1),feature0,feature1, 'min_corr', 0.9, ...
+        'do_plot', do_debug);
     %%  Find robust correspondence point pairs with RANSAC-algorithm
     correspondence = F_ransac(correspondence, 'tolerance', 0.04);
     if do_debug
