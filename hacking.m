@@ -4,7 +4,7 @@ im0 = imread([scene_path '/im0.png']);
 im0g= rgb_to_gray(im0);
 im1 = imread([scene_path '/im1.png']);
 im1g= rgb_to_gray(im1);
-
+%%
 fig = figure('Name',['Computer Vision - ' scene_path], ...
     'NumberTitle','off'); %, 'WindowState','minimized');
 tabgp = uitabgroup(fig);
@@ -265,12 +265,9 @@ xlabel('x'); ylabel('y'); zlabel('z');
 grid on;
 
 %% Epipolar Lines OWN
-x = correspondence_(1,:);
-y = correspondence_(2,:);
-x2 = correspondence_(3,:);
-y2 = correspondence_(4,:);
 color = ['r','g','b','c','y','m','k'];
 
+% Compute Eigenpoles in image - just for interest
 [Dl,~] = eig(E*E');
 el = Dl(:,1)./Dl(3,1);
 [Dr,~] = eig(E'*E);
@@ -286,12 +283,12 @@ colormap(gray)
 xx = 0:size(im1g,2);
 
 for i =1:size(correspondence_)-1
-    temp = E*[x(i) y(i) 1]';
+    temp = E*[correspondence_(1:2,i)' 1]';
     temp = temp./temp(3);
     yy = - temp(1)/temp(2) * xx - temp(3)/temp(2);
     hold on
     plot(tax(11),xx,yy,color(mod(i,7)+1),'LineWidth',2)
-    temp2 = [x2(i) y2(i) 1]*E;
+    temp2 = [correspondence_(3:4,i)' 1]*E;
     temp2 = temp2./temp2(3);
     yy = -temp2(1)/temp2(2)* xx - temp2(3)/temp2(2);
     hold on
@@ -307,12 +304,39 @@ tax(12) = axes('Parent', tab(12));
 title 'EpipolarLines MATLAB';
 hold on
 
-epiLines = epipolarLine(E,correspondence(1:2,:)');
+epiLines = epipolarLine(E,correspondence_(1:2,:)');
 points = lineToBorderPoints(epiLines,size(im0g));
 imshow([im0g im1g],'Parent',tax(12),'InitialMagnification', 'fit');
 colormap(gray)
 line(tax(12),points(:,[1,3])',points(:,[2,4])');
 
-epiLines = epipolarLine(E,correspondence(3:4,:)');
+epiLines = epipolarLine(E,correspondence_(3:4,:)');
 points = lineToBorderPoints(epiLines,size(im1g));
 line(tax(12),size(im0g,2) + points(:,[1,3])',points(:,[2,4])');
+
+%% Compute perspective projection matrices PPMs
+% P = Cam* (I | 0) G
+% G = [ R  t ]
+%     [ 0  1 ]
+
+G = [R T; zeros(1,3), 1];
+
+P0 = cam0 * [eye(3) zeros(3,1)] * G;
+P1 = cam1 * [eye(3) zeros(3,1)] * G;
+
+% P0 = [R; T'] * cam0;
+% P1 = [R; T'] * cam1;
+
+
+%% Rectification
+
+[T0, T1, Pn0, Pn1] = rectify( P0, P1 )
+
+% TEST Transformation
+im0_rect = imTrans(im0g,T0,[],min(size(im0g)));
+im1_rect = imTrans(im1g,T1,[],min(size(im1g)));
+%%
+figure;
+imshow(im0_rect,'InitialMagnification','fit');
+figure;
+imshow(im1_rect,'InitialMagnification','fit');
