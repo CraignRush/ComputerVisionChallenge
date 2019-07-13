@@ -61,7 +61,7 @@ plot(tax(5),[feature0(1,:),feature1(1,:)+size(im0g,2)],[feature0(2,:),feature1(2
 %% Correspondence estimation
 % Optionally adD: 'window_length',25,'min_corr', 0.90
 correspondence = punkt_korrespondenzen(im0g,im1g,feature0,feature1, ...
-    'min_corr', 0.99, 'do_plot', false);
+    'min_corr', 0.90, 'do_plot', false);
 
 %% Plot Correspondence
 tab(6) = uitab(tabgp, 'Title', 'Correspondence');
@@ -235,8 +235,8 @@ title '3D Reconstruction';
 hold on
 P1 = bsxfun(@times, lambda(:,1)', cam1 \ [correspondence_(1:2,:); ones(1, size(correspondence_,2))]);
 for i = 1:length(P1)
-    scatter3(tax(end),P1(1,i), P1(2,i), P1(3,i), '.k');
-    text(tax(end),P1(1,i), P1(2,i), P1(3,i),num2str(i));
+    scatter3(tax(10),P1(1,i), P1(2,i), P1(3,i), '.k');
+    text(tax(10),P1(1,i), P1(2,i), P1(3,i),num2str(i));
 end
 
 % Store edge values
@@ -250,16 +250,69 @@ cam1_plane = camC1(:,[1:4 1]);
 cam2_plane = camC2(:,[1:4 1]);
 
 % Plot camera plane
-plot3(tax(end),cam1_plane(1,:), cam1_plane(2,:), cam1_plane(3,:), 'b');
-text(tax(end),cam1_plane(1,4), cam1_plane(2,4), cam1_plane(3,4), 'C1');
-plot3(tax(end),cam2_plane(1,:), cam2_plane(2,:), cam2_plane(3,:), 'r');
-text(tax(end),cam2_plane(1,4), cam2_plane(2,4), cam2_plane(3,4), 'C2');
+plot3(tax(10),cam1_plane(1,:), cam1_plane(2,:), cam1_plane(3,:), 'b');
+text(tax(10),cam1_plane(1,4), cam1_plane(2,4), cam1_plane(3,4), 'C1');
+plot3(tax(10),cam2_plane(1,:), cam2_plane(2,:), cam2_plane(3,:), 'r');
+text(tax(10),cam2_plane(1,4), cam2_plane(2,4), cam2_plane(3,4), 'C2');
 
 
 % Set camera position
-campos(tax(end),[43, -22, -87]);
-camup(tax(end),[0,-1,0]);
+campos(tax(10),[43, -22, -87]);
+camup(tax(10),[0,-1,0]);
 
 % Add grid and axis label
 xlabel('x'); ylabel('y'); zlabel('z');
 grid on;
+
+%% Epipolar Lines OWN
+x = correspondence_(1,:);
+y = correspondence_(2,:);
+x2 = correspondence_(3,:);
+y2 = correspondence_(4,:);
+color = ['r','g','b','c','y','m','k'];
+
+[Dl,~] = eig(E*E');
+el = Dl(:,1)./Dl(3,1);
+[Dr,~] = eig(E'*E);
+er = Dr(:,1)./Dr(3,1);
+
+%plot epipolar lines
+tab(11) = uitab(tabgp, 'Title', 'Epipolar Lines (Own)');
+tax(11) = axes('Parent', tab(11));
+title 'EpipolarLines';
+hold on
+imshow([im0g im1g],'Parent',tax(11),'InitialMagnification', 'fit'); hold on
+colormap(gray)
+xx = 0:size(im1g,2);
+
+for i =1:size(correspondence_)-1
+    temp = E*[x(i) y(i) 1]';
+    temp = temp./temp(3);
+    yy = - temp(1)/temp(2) * xx - temp(3)/temp(2);
+    hold on
+    plot(tax(11),xx,yy,color(mod(i,7)+1),'LineWidth',2)
+    temp2 = [x2(i) y2(i) 1]*E;
+    temp2 = temp2./temp2(3);
+    yy = -temp2(1)/temp2(2)* xx - temp2(3)/temp2(2);
+    hold on
+    plot(tax(11),size(im0g,2) + xx,yy,color(mod(i,7)+1),'LineWidth',2)
+end
+
+%% Epipolar Lines MATLAB
+% MATLAB Internal
+
+%plot epipolar lines
+tab(12) = uitab(tabgp, 'Title', 'Epipolar Lines (MATLAB)');
+tax(12) = axes('Parent', tab(12));
+title 'EpipolarLines MATLAB';
+hold on
+
+epiLines = epipolarLine(E,correspondence(1:2,:)');
+points = lineToBorderPoints(epiLines,size(im0g));
+imshow([im0g im1g],'Parent',tax(12),'InitialMagnification', 'fit');
+colormap(gray)
+line(tax(12),points(:,[1,3])',points(:,[2,4])');
+
+epiLines = epipolarLine(E,correspondence(3:4,:)');
+points = lineToBorderPoints(epiLines,size(im1g));
+line(tax(12),size(im0g,2) + points(:,[1,3])',points(:,[2,4])');

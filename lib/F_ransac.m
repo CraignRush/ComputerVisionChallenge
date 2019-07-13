@@ -19,75 +19,63 @@ function [Korrespondenzen_robust, F] = F_ransac(Korrespondenzen, varargin)
     % Modell passend (Teil des Consensus-Sets) bewertet wird
     P.addOptional('tolerance', 0.01, @isnumeric);
     
-    % Get Input
+     % Get Input
     P.parse(varargin{:});
     
     % Assign variables
-    p                       = P.Results.p;
-    epsilon                 = P.Results.epsilon;
-    tolerance               = P.Results.tolerance;
-    Korrespondenzen_robust  = [];
-    F                       = [];
+    p           = P.Results.p;
+    epsilon     = P.Results.epsilon;
+    tolerance   = P.Results.tolerance;
     
     % get x1 and x2 array
     x1_pixel = [Korrespondenzen(1:2,:);ones(1,length(Korrespondenzen))];
     x2_pixel = [Korrespondenzen(3:4,:);ones(1,length(Korrespondenzen))];
-    end
     
-    %Korrespondenzen_robust = {epsilon, p, tolerance, x1_pixel, x2_pixel};
-    
-    %% RANSAC Algorithmus Vorbereitung - Init vars
-    
-    % # of needed pts
+    %% RANSAC Algorithmus Vorbereitung
+    % Anzahl der benoetigten Puntke
     k = 8;
     
-    % iteration number
-    s = ceil(log(1-p)/log(1-(1-epsilon)^k));
-    
-    % max size of the currently found consensus set
+    % Die Iterationszahl
+    s = ceil( log(1-p)/log(1-(1-epsilon)^k) );
+
+    % Zustandsvariable, die die Anzahl der Korrespondenzen im bisher groessten Consensus-Set speichern soll
     largest_set_size = 0;
     
-    % sampson distance of the set above
-    largest_set_dist = Inf;
+    % Zustandsvariable, die die Sampson-Distanz des bisher groessten Consensus-Set speichern soll
+    largest_set_dist = inf;
     
-    % fundamental matrix of the largest consensus set found
-    largest_set_F = zeros(3);
+    % Ein Zwischenspeicher für die Fundamentalmatrix mit der das bisher groesste Consensus-Set gefunden wurde
+    largest_set_F = zeros(3,3);
     
-    %Korrespondenzen_robust = {k, s, largest_set_size, largest_set_dist, largest_set_F};
+    selector = [];
     
-    %% RANSAC
-    i = 1;
+    %% RANSAC Algorithmus
     
-    while i <= s
-        %choose randomly k points
-        index = randperm(length(Korrespondenzen),k);
+    for i = 1:s
+        % Fundamentalmatrix F aus k zufaellig gewaelten Korrespondenzpunktpaaren
+        F = achtpunktalgorithmus(Korrespondenzen(:,randperm(length(Korrespondenzen),k)));
         
-        % compute fundamental matrix from random points
-        F = achtpunktalgorithmus(Korrespondenzen(:,index));
-        % compute sampson distance
-        dist_Sampson = sampson_dist(F,x1_pixel,x2_pixel);
+        % Berechnen Sie die Sampson-Distanz effizient fuer alle Korrespondenzpunktpaaren
+        sd = sampson_dist(F, x1_pixel, x2_pixel);
         
-        % select all points inside the tolerance
-        current = dist_Sampson < tolerance;
+        % Korrespondenzpunktpaare in aktuellen Consensus-Set aufnehmen
+        consensus_set_idx = sd < tolerance;
+        consensus_set = sd(consensus_set_idx);
         
-        % # of inners and sum of Sampson-distances over random k
-        current_set_size = numel(dist_Sampson(current));
-        current_set_dist = sum(dist_Sampson(current));
-        selector = [];
+        % Bestimmen Sie für das aktuelle Consensus-Set die Anzahl der enthaltenen Paare 
+        % und die absolute Set-Distanz indem sie die Sampson-Distanzen für das aktuelle 
+        % Consensus-Set aufsummieren.
+        current_set_size = numel(consensus_set);
+        current_set_dist = sum(consensus_set);
         
-        %% RANSAC Algorithmus
-        
-        if (current_set_size > largest_set_size) || ...
-                ((current_set_size == largest_set_size) && ...
-                (current_set_dist < largest_set_dist))
+        % Vergleichen Sie diese mit der bisher groessten Set-Groesse gespeichert in largest_set_size
+        if current_set_size > largest_set_size || ((current_set_size == largest_set_size) && (current_set_dist < largest_set_dist))
             largest_set_dist = current_set_dist;
             largest_set_size = current_set_size;
             largest_set_F = F;
-            consensus_indices = current;
+            selector = consensus_set_idx;
         end
-        i = i+1;
     end
     Korrespondenzen_robust = [x1_pixel(1:2,selector);x2_pixel(1:2,selector)];
     F = largest_set_F;
-
 end
