@@ -37,11 +37,13 @@ imshow([im0g_fil,im0g_fil],'Parent',tax(3));
 
 %%
 im0bw = im0g;
-im0bw(im0bw>128) = 255;
-im0bw(im0bw<=128) = 0;
+threshold0 = median(im0g,'all');
+im0bw(im0bw>threshold0) = 255;
+im0bw(im0bw<=threshold0) = 0;
 im1bw = im1g;
-im1bw(im1bw>128) = 255;
-im1bw(im1bw<=128) = 0;
+threshold1 = median(im1g,'all');
+im1bw(im1bw>threshold1) = 255;
+im1bw(im1bw<=threshold1) = 0;
 
 tab(4) = uitab(tabgp, 'Title', 'Discrete');
 tax(4) = axes('Parent', tab(4));
@@ -49,8 +51,8 @@ imshow([im0bw,im1bw],'Parent',tax(4));
 
 %% Feature extraction
 % Optionally add: 'segment_length',9,'k',0.05,'min_dist',50,'N',20
-feature0 = harris_detektor( im0g, 'segment_length',9,'k',0.05,'min_dist',30,'N',20 ); 
-feature1 = harris_detektor( im1g, 'segment_length',9,'k',0.05,'min_dist',30,'N',20 );
+feature0 = harris_detektor(im0bw, 'segment_length',9,'k',0.05,'min_dist',30,'N',20 ); 
+feature1 = harris_detektor(im1bw, 'segment_length',9,'k',0.05,'min_dist',30,'N',20 );
 
 %%
 tab(5) = uitab(tabgp, 'Title', 'Harris Detection');
@@ -110,9 +112,11 @@ indices_tooclose = feature1(1,:) < floor(window_size/2) |...
         (size(im1g,1) - feature1(2,:)) < floor(window_size/2);
 feature1(:,indices_tooclose) = [];
         
-W=ufdwt(1,window_size,1);
 im0c = double(im0);
 im1c = double(im1);
+
+%%
+W=ufdwt(1,window_size,1);
 W=W(ceil(window_size/2),:);
 nDirs  = 2; % Directions: x y
 gweight = 6;
@@ -127,12 +131,18 @@ for i_pt = 1:length(feature0)
    gradients0(i_pt,1) = W * im0c( (pt(1)-floor(window_size/2)):(pt(1)+floor(window_size/2)) ,pt(2),1); 
    gradients0(i_pt,2) = W * im0c( (pt(1)-floor(window_size/2)):(pt(1)+floor(window_size/2)) ,pt(2),2); 
    gradients0(i_pt,3) = W * im0c( (pt(1)-floor(window_size/2)):(pt(1)+floor(window_size/2)) ,pt(2),3); 
-   gradients0(i_pt,4:3+gweight) = W * double(im0g( (pt(1)-floor(window_size/2)):(pt(1)+floor(window_size/2)) ,pt(2))); 
+   if gweight > 0
+   gradients0(i_pt,4:(3+gweight)) = W * double(im0g( (pt(1)-floor(window_size/2)):(pt(1)+floor(window_size/2)) ,pt(2))); 
+   end
    gradients0(i_pt,4+gweight) = W * im0c( pt(1), (pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2)),1)'; 
-   gradients0(i_pt,5:gweight) = W * im0c( pt(1), (pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2)),2)'; 
-   gradients0(i_pt,6:gweight) = W * im0c( pt(1), (pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2)),3)'; 
-   gradients0(i_pt,(7+gweight):(7+2*gweight)) = W * double(im0g(pt(1),(pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2))))'; 
-   gradients0(i_pt, (7+2*gweight):end) = pt;
+   gradients0(i_pt,5+gweight) = W * im0c( pt(1), (pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2)),2)'; 
+   gradients0(i_pt,6+gweight) = W * im0c( pt(1), (pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2)),3)'; 
+   if gweight > 0
+   gradients0(i_pt,(7+gweight):(6+2*gweight)) = W * double(im0g(pt(1),(pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2))))'; 
+   end
+   if posweight > 0
+   gradients0(i_pt, (7+2*gweight):end) = repmat(reshape(pt ./ size(im0g),1,[]),1,posweight);
+   end
 end
 for i_pt = 1:length(feature1)
    pt = feature1(:,i_pt);
@@ -140,12 +150,18 @@ for i_pt = 1:length(feature1)
    gradients1(i_pt,1) = W * im1c( (pt(1)-floor(window_size/2)):(pt(1)+floor(window_size/2)) ,pt(2),1); 
    gradients1(i_pt,2) = W * im1c( (pt(1)-floor(window_size/2)):(pt(1)+floor(window_size/2)) ,pt(2),2); 
    gradients1(i_pt,3) = W * im1c( (pt(1)-floor(window_size/2)):(pt(1)+floor(window_size/2)) ,pt(2),3); 
+   if gweight > 0
    gradients1(i_pt,4:3+gweight) = W * double(im1g( (pt(1)-floor(window_size/2)):(pt(1)+floor(window_size/2)) ,pt(2))); 
+   end
    gradients1(i_pt,4+gweight) = W * im1c( pt(1), (pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2)),1)'; 
    gradients1(i_pt,5+gweight) = W * im1c( pt(1), (pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2)),2)'; 
    gradients1(i_pt,6+gweight) = W * im1c( pt(1), (pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2)),3)'; 
-   gradients1(i_pt,(7+gweight):(7+2*gweight)) = W * double(im1g(pt(1),(pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2))))';
-   gradients1(i_pt,(7+2*gweight):end) = pt;
+   if gweight > 0
+   gradients1(i_pt,(7+gweight):(6+2*gweight)) = W * double(im1g(pt(1),(pt(2)-floor(window_size/2)):(pt(2)+floor(window_size/2))))';
+   end
+   if posweight > 0
+   gradients1(i_pt, (7+2*gweight):end) = repmat(reshape(pt ./ size(im1g),1,[]),1,posweight);
+   end
 end
 
 %%
@@ -153,30 +169,24 @@ corresp = inf(length(feature0),length(feature1));
 
 for i1 = 1:length(feature0)
     for i2 = 1:length(feature1)
-        corresp(i1,i2) = norm(gradients0(i1,:)/norm(gradients0(i1,:)) - ...
-            gradients1(i2,:)/norm(gradients1(i2,:)),1);
+        corresp(i1,i2) = norm(gradients0(i1,:)/norm(gradients0(i1,:))-...
+            gradients1(i2,:)/norm(gradients1(i2,:)));
     end
 end
 %%
-[vals, indxs] = min(corresp,[],1);
+[~,sindxs] = sort(reshape(corresp,[],1));
 
-indxs(vals>10) = []; % Select threshold
-vals(vals>10) = [];
-[svals,sindxs] = sort(vals);
 %%
 max_corresp = 100;
-correspons = zeros(min([max_corresp,length(svals)]),2);
-for i = 1:size(correspons,1)
-    correspons(i,1) = sindxs(i);
-    [m, j] = min(corresp(:,sindxs(i)));
-    correspons(i,2) = j;
+correspondence_ = zeros(4,min([max_corresp,length(sindxs)]));
+for i = 1:size(correspondence_,2)
+    [i2,j2] = ind2sub(size(corresp),sindxs(i));
+    correspondence_(1:2,i) = feature0(:,i2);
+    correspondence_(3:4,i) = feature1(:,j2);
 end
 
-%%
-correspondence_ = zeros(4,size(correspons,1));
-for i = 1:size(correspons,1)
-    correspondence_(:,i) = [feature0(:,correspons(i,2)); feature1(:,correspons(i,1))];
-end
+%% Find robust correspondence point pairs with RANSAC-algorithm
+correspondence_ = F_ransac(correspondence_, 'tolerance', 0.1);
 
 %% Plot
 tab(8) = uitab(tabgp, 'Title', 'Correspondence (Own)');
@@ -191,26 +201,61 @@ for i=1:size(correspondence_,2)
     line(tax(8),pt1,pt2);
 end
     
-%%
+%% Matlab: Harris
 I1 = im0g; I2 = im1g;
 points1 = detectHarrisFeatures(I1);
 points2 = detectHarrisFeatures(I2);
 
+tab = [tab, uitab(tabgp, 'Title', 'Harris (Matlab)')];
+tax = [tab,axes('Parent', tab(end))];
+imshow([I1,I2],'Parent',tax(end)); hold on;
+points1_ = points1.selectStrongest(50).Location;
+points2_ = points2.selectStrongest(50).Location;
+plot(tax(end),[points1_(:,1); points2_(:,1)+size(I1,2)],[points1_(:,2);points2_(:,2)],'g+');
 
+%% Matlab: Features
 [f1, vpts1] = extractFeatures(I1, points1);
 [f2, vpts2] = extractFeatures(I2, points2);
 
+tab = [tab, uitab(tabgp, 'Title', 'Features (Matlab)')];
+tax = [tab,axes('Parent', tab(end))];
+imshow([I1,I2],'Parent',tax(end)); hold on;
+%f1_ = f1.selectStrongest(50).Location;
+%f2_ = f2.selectStrongest(50).Location;
+vpts1_ = vpts1.selectStrongest(50).Location;
+vpts2_ = vpts2.selectStrongest(50).Location;
+%plot(tax(end),[f1_(:,1); f2_(:,1)+size(I1,2)],[f1_(:,2);f2_(:,2)],'g+');
+plot(tax(end),[vpts1_(:,1); vpts2_(:,1)+size(I1,2)],[vpts1_(:,2);vpts2_(:,2)],'ro');
 
+
+%% Try own algorithm on Matlab features
+
+correspondence__ = punkt_korrespondenzen2(im0g,im1g,im0c,im1c,round(vpts1_)',round(vpts2_)', 'min_corr', 0.9,'do_plot', false);
+   
+%% Plot
+tab = [tab,uitab(tabgp, 'Title', 'Correspondence (Own)')];
+tax = [tab,axes('Parent', tab(end))];
+title 'Own Correspondence Estimation';
+imshow(uint8([im0g,im1g]),'Parent',tax(end)); hold on;
+plot(tax(end),[correspondence__(1,:),correspondence__(3,:)+size(im0g,2)], ...
+    [correspondence__(2,:),correspondence__(4,:)],'go');
+for i=1:size(correspondence__,2)
+    pt1 = [correspondence__(1,i), correspondence__(3,i)+size(im0g,2)];
+    pt2 = [correspondence__(2,i), correspondence__(4,i)];
+    line(tax(end),pt1,pt2);
+end    
+
+%%
 
 indexPairs = matchFeatures(f1, f2) ;
 matchedPoints1 = vpts1(indexPairs(1:20, 1));
 matchedPoints2 = vpts2(indexPairs(1:20, 2));
 
-tab(9) = uitab(tabgp, 'Title', 'Correspondence (Matlab)');
-tax(9) = axes('Parent', tab(9));
-showMatchedFeatures(I1,I2,matchedPoints1,matchedPoints2,'montage','Parent',tax(9));
-title(tax(9), 'Candidate point matches');
-legend(tax(9), 'Matched points 1','Matched points 2');
+tab = [tab, uitab(tabgp, 'Title', 'Correspondence (Matlab)')];
+tax = [tax, axes('Parent', tab(end))];
+showMatchedFeatures(I1,I2,matchedPoints1,matchedPoints2,'montage','Parent',tax(end));
+title(tax(end), 'Candidate point matches');
+legend(tax(end), 'Matched points 1','Matched points 2');
 
 %% Calibrate
 cal = fileread([ scene_path '/calib.txt']);
@@ -229,8 +274,8 @@ E = achtpunktalgorithmus(correspondence_,cam0, cam1);
 
 %%
 % Draw P1 in figure and label
-tab(10) = uitab(tabgp, 'Title', 'Reconstruction (Own)');
-tax(10) = axes('Parent', tab(10));
+tab = [tab,uitab(tabgp, 'Title', 'Reconstruction (Own)')];
+tax = [tax,axes('Parent', tab(end))];
 title '3D Reconstruction';
 hold on
 P1 = bsxfun(@times, lambda(:,1)', cam1 \ [correspondence_(1:2,:); ones(1, size(correspondence_,2))]);

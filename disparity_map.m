@@ -9,12 +9,14 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     P = inputParser;
     
     % Liste der optionalen Parameter
-    P.addOptional('do_debug', false, @islogical)
+    P.addOptional('do_debug', false, @islogical);
+    P.addOptional('method','daniel',@isstring);
     
     % Lese den Input
     P.parse(varargin{:});
     
     do_debug = P.Results.do_debug;
+    method   = P.Results.method;
     
     %% Do some typical error checking here
     if do_debug
@@ -45,52 +47,104 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     im1g= rgb_to_gray(im1);
     cal = fileread([ scene_path '/calib.txt']);
 
+    if do_debug
+        fig = figure('Name',['Computer Vision - ' scene_path], ...
+            'NumberTitle','off'); %, 'WindowState','minimized');
+        tabgp = uitabgroup(fig);
+        tab = uitab(tabgp, 'Title', 'Original');
+        tax = axes('Parent', tab(end));
+        imshow([im0,im1],'Parent',tax(end));
+    end
     %% Create calibration variables
     evalc(cal);
     
     %% Feature extraction
     % Optionally add: 'segment_length',9,'k',0.05,'min_dist',50,'N',20
-    im0bw = im0g; im0bw(im0bw> 128) = 255; 
-    im1bw = im1g; im1bw(im1bw<=128) =   0;
+    im0bw = im0g; threshold0 = median(im0g,'all');
+    im0bw(im0bw>threshold0) = 255;
+    im0bw(im0bw<=threshold0) = 0;
+    im1bw = im1g; threshold1 = median(im1g,'all');
+    im1bw(im1bw>threshold1) = 255;
+    im1bw(im1bw<=threshold1) = 0;
+    do_extract_color_feature = do_debug & ~do_debug;
     
     feature0 = harris_detektor( im0bw, 'segment_length', 9, 'k', 0.05, ...
         'min_dist', 30, 'N', 20 ); 
+    feature0 = [feature0,harris_detektor( im0g, 'segment_length', 9, 'k', 0.05, ...
+        'min_dist', 30, 'N', 20 )]; 
+    if do_extract_color_feature
+        feature0 = [feature0,harris_detektor( im0(:,:,1), ...
+            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )]; 
+        feature0 = [feature0,harris_detektor( im0(:,:,2), ...
+            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )]; 
+        feature0 = [feature0,harris_detektor( im0(:,:,3), ...
+            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )]; 
+    end
     feature1 = harris_detektor( im1bw, 'segment_length', 9, 'k', 0.05, ...
         'min_dist', 30, 'N', 20 );
-    
-    if do_debug
-        figure('Name','Harris Detection','NumberTitle','off');
-        title 'Harris detection';
-        ax = subplot(1,2,1); imshow(uint8(im0g)); hold on;
-        plot(ax, feature0(1,:),feature0(2,:),'go'); 
-        ax = subplot(1,2,2); imshow(uint8(im1g)); hold on;
-        plot(ax, feature1(1,:),feature1(2,:),'go');  
+    feature1 = [feature1, harris_detektor( im1g, 'segment_length', 9, 'k', 0.05, ...
+        'min_dist', 30, 'N', 20 )];
+    if do_extract_color_feature
+        feature1 = [feature1, harris_detektor( im1(:,:,1), ...
+            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )];
+        feature1 = [feature1, harris_detektor( im1(:,:,2), ...
+            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )];
+        feature1 = [feature1, harris_detektor( im1(:,:,3), ...
+            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )];
     end
     
-    %% Correspondence estimation
-    % Optionally adD: 'window_length',25,'min_corr', 0.90
-    
-    % correspondence = punkt_korrespondenzen(im0g,im1g,feature0,feature1, 'min_corr', 0.9, 'do_plot', do_debug);
-    
-    correspondence = punkt_korrespondenzen2(im0g,im1g,double(im0),double(im1),feature0,feature1, 'min_corr', 0.9,'do_plot', do_debug);
-   
-    % correspondence = correspondence_ct(im0g,im1g,feature0,feature1,'do_plot', do_debug,'window_size',9);
-   
-    %%  Find robust correspondence point pairs with RANSAC-algorithm
-    correspondence = F_ransac(correspondence, 'tolerance', 0.4);
     if do_debug
-        figure('Name','Robust Correspondence Estimation','NumberTitle','off');
-        title 'Robust Correspondence Estimation';
-        imshow(uint8([im0g,im1g])); hold on
-        plot(correspondence(1,:),correspondence(2,:),'go');
-        plot(correspondence(3,:)+size(im0g,2),correspondence(4,:),'ro')
+        tab = [tab,uitab(tabgp, 'Title', 'Harris Detection')];
+        tax = [tax,axes('Parent', tab(end))];
+        title 'Harris detection';
+        imshow(uint8([im0g,im1g]),'Parent',tax(end)); hold on;
+        plot(tax(end), feature0(1,:),feature0(2,:),'g+'); 
+        plot(tax(end), feature1(1,:)+size(im0g,2),feature1(2,:),'g+');  
+    end
+    
+    %% Correspondence estimation - Find Match
+
+    fm_method = 'NN';
+    if strcmp(method, 'matlabgrader')
+        correspondence = correspondence_matlabgrader(im0g,im1g,feature0, feature1);
+    elseif strcmp(method,'daniel')
+        sig0 = correspondence_daniel(im0g,im0,feature0,'gray_weight',6,'pos_weight',1);
+        sig1 = correspondence_daniel(im1g,im1,feature1,'gray_weight',6,'pos_weight',1);
+        fm_method = 'NN';
+    elseif strcmp(method,'ct')
+        sig0 = correspondence_ct(im0g,feature0,'window_size',9);
+        sig1 = correspondence_ct(im1g,feature1,'window_size',9);
+        fm_method = 'Hamming';
+    elseif strcmp(method,'lpm')
+        sig0 = correspondence_lpm(im0g,feature0);
+        sig1 = correspondence_lpm(im1g,feature1);
+        fm_method = 'NN';
+    end
+    
+    if ~exist('correspondence','var')
+        correspondence = find_matches(sig0,sig1,feature0,feature1,fm_method);
+    end
+    %% Correspondence estimation - Find Robust Match
+    
+    %  Find robust correspondence point pairs with RANSAC-algorithm
+    correspondence = F_ransac(correspondence, 'tolerance', 0.4);
+    
+    if do_debug
+        tab = [tab,uitab(tabgp, 'Title', 'Correspondence')];
+        tax = [tax,axes('Parent', tab(end))];
+
+        title 'Correspondence Estimation';
+
+        imshow(uint8([im0g,im1g]),'Parent',tax(end)); hold on;
+        plot(tax(end),[correspondence(1,:),correspondence(3,:)+size(im0g,2)],[correspondence(2,:),correspondence(4,:)],'go');
+        % plot the line
         for i=1:size(correspondence,2)
             pt1 = [correspondence(1,i), correspondence(3,i)+size(im0g,2)];
             pt2 = [correspondence(2,i), correspondence(4,i)];
-            line(pt1,pt2);
+            line(tax(end),pt1,pt2);
         end
     end
-    
+
     %% Calculate essential matrix E
     E = achtpunktalgorithmus(correspondence,cam0, cam1);
     
@@ -99,7 +153,8 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     
     %% Calculate correct euklidian transformation and 3D reconstruction
     [T, R,~,~] = rekonstruktion(T1, T2, R1, R2, correspondence, ...
-        cam0, cam1, do_debug);
+        cam0, cam1, false);
+
     
     %% Calculate Disparity Map
    
