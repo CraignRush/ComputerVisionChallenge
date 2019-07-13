@@ -16,24 +16,39 @@ mail = {'ga96vur@mytum.de', 'ga96fin@mytum.de', 'ga78zan@mytum.de', 'ga58huv@myt
 %% Start timer here
 tic;
 
+%% Debugging
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+DEBUG_MODE = false;%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Disparity Map
 % Specify path to scene folder containing img0 img1 and calib
-scene_path = 'test/sword';
- 
+scene_path = 'test/motorcycle';
+
 % Calculate disparity map and Euclidean motion
-[D, R, T] = disparity_map(scene_path, 'do_debug', true);
+[D, R, T] = disparity_map(scene_path, 'do_debug', DEBUG_MODE);
 
 %% Validation
 % Specify path to ground truth disparity map
-gt_path = [scene_path '/disp0.pfm'];
-
-% Load the ground truth
-G = readpfm(gt_path);
-G = (G - min(min(G))) ./ max(max((G - min(min(G))))) * 255;
-
-% Estimate the quality of the calculated disparity map
-p = verify_dmap(D, G);
-
+if contains(scene_path,'tsukuba')
+    gt_path = [scene_path '/disp0.pgm'];
+    G = imread(gt_path);
+    figure('Name','Disparity Map - Ground Truth','NumberTitle','off');
+    title 'Disparity Map - Ground Truth';
+    imshow(G, [0 255]);
+    colormap(gca,jet);
+    colorbar;
+else    
+    gt_path = [scene_path '/disp0.pfm'];
+    % Load the ground truth
+    G = readpfm(gt_path);
+    G = (G - min(G(:))) ./ max(G(:) - min(G(:))) * 255;
+    
+    % Estimate the quality of the calculated disparity map
+    p = verify_dmap(D, G);
+    disp('PSNR p: '); disp(p);
+end
 %% Stop timer here
 elapsed_time = toc;
 
@@ -41,13 +56,12 @@ elapsed_time = toc;
 %% Print Results
 disp('Rotation R:'); disp(R);
 disp('Translation T:'); disp(T);
-disp('PSNR p: '); disp(p);
-disp('Elapsed Time: '); disp(elapsed_time);
+fprintf('Elapsed Time: %2.0f:%2.0f\n',elapsed_time/60,mod(elapsed_time,60));
 
 
 %% Display Disparity
 figure('Name','Disparity Map','NumberTitle','off');
 title 'Disparity Map';
-imshow(D, [0 255]);
+imshow(D);
 colormap(gca,jet);
 colorbar;
