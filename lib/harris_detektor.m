@@ -5,12 +5,29 @@ function merkmale = harris_detektor(input_image, varargin)
     P = inputParser;
     
     % Liste der optionalen Parameter
+    
+    % Seitenlaenge des quadratischen Fensters um die Merkmalspunkte,
+    % welche untereinander verglichen werden
     P.addOptional('segment_length', 15, @(x) isnumeric(x) && x>1 && mod(x,2)==1 && numel(x)==1)
+    
+    % gewichtet zwischen Ecken- und Kantenprioritaet
+    % (In der Literatur wird oftmals k = 0.05 gesetzt)
     P.addOptional('k', 0.05, @(x) isnumeric(x) && x >=0 && x <= 1);
+    
+    % legt den Schwellenwert zur Detektion einer Ecke fest
     P.addOptional('tau', 1e6, @(x) isnumeric(x) && x>0);
+    
     P.addOptional('do_plot', false, @islogical);
+    
+    %ist der minimale Pixelabstand zweier Merkmale 
     P.addOptional('min_dist',20,@(x) isnumeric(x) && x>=1);
+    
+    % definiert die Kachelgroesse, je nach Eingabe entweder die
+    % Seitenlaenge fuer eine quadratische Kachel oder 
+    % ein Vektor mit zwei Eintraegen fuer Hoehe und Breite
     P.addOptional('tile_size',[200,200],@(x) isnumeric(x) && numel(x)<=2);
+    
+    % ist die maximale Anzahl an Merkmalen innerhalb einer Kachel 
     P.addOptional('N',5,@(x) isnumeric(x) && x>=1);
     
     % Lese den Input

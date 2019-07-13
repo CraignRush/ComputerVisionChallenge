@@ -27,8 +27,10 @@ function [EF] = achtpunktalgorithmus(Korrespondenzen, K1, K2)
     
     % Entweder Essentielle Matrix oder Fundamentalmatrix
     if(nargin>1)
+        % Essentielle Matrix
         EF = Ug * diag([1,1,0]) * Vg';
     else
+        % Fundamentalmatrix
         % Sg -> diag(s1, s2, 0)
         Sg(3,3) = 0;
         EF = Ug * Sg * Vg';
