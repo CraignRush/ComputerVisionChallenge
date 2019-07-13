@@ -120,40 +120,40 @@ el = Dl(:,1)./Dl(3,1);
 er = Dr(:,1)./Dr(3,1);
 
 %plot epipolar lines
-figure
-imagesc(im0_bw);
+figure(4)
+imagesc(im0bw);
 colormap(gray);
 figure(5)
-imagesc(im1_bw)
+imagesc(im1bw)
 colormap(gray)
-xx = 0:size(im1_bw,2);
+xx = 0:size(im1bw,2);
 
 for i =1:size(correspondence)-1
     temp = E*[x(i) y(i) 1]';
     temp = temp./temp(3);
     yy = - temp(1)/temp(2) * xx - temp(3)/temp(2);
-    figure(5)
+    figure(4)
     hold on
     plot(xx,yy,color(mod(i,7)+1),'LineWidth',2)
     temp2 = [x2(i) y2(i) 1]*E;
     temp2 = temp2./temp2(3);
     yy = -temp2(1)/temp2(2)* xx - temp2(3)/temp2(2);
-    figure(2)
+    figure(5)
     hold on
     plot(xx,yy,color(mod(i,7)+1),'LineWidth',2)
 end
 
 % MATLAB Internal
 epiLines = epipolarLine(E,correspondence(1:2,:)');
-points = lineToBorderPoints(epiLines,size(im0_bw));
+points = lineToBorderPoints(epiLines,size(im0bw));
 figure;
-imshow(uint8(im0_bw)); alpha(0.5); hold on
+imshow(uint8(im0bw)); alpha(0.5); hold on
 line(points(:,[1,3])',points(:,[2,4])');
 
 epiLines = epipolarLine(E,correspondence(3:4,:)');
-points = lineToBorderPoints(epiLines,size(im1_bw));
+points = lineToBorderPoints(epiLines,size(im1bw));
 figure;
-imshow(uint8(im1_bw)); alpha(0.5); hold on
+imshow(uint8(im1bw)); alpha(0.5); hold on
 line(points(:,[1,3])',points(:,[2,4])');
 
 %% Calculate possible T and R
@@ -166,16 +166,24 @@ disp("Reconstructing...");
 
 %% Image rectification
 
-pm0 = [cam0 .* R, cam0 * T];
-pm1 = [cam1 .* R, cam1 * T];
+P0 = [cam0 .* R, cam0 * T];
+P1 = [cam1 .* R, cam1 * T];
+
+[H0,H1,Pn0,Pn1] = rectifyP(P0,P1);
+
+% The F matrix induced by Pn0,Pn1 shoud be skew([1 0 0])
+fprintf('Rectification algebraic error:\t\t %0.5g \n',  ...
+    norm (abs(fund(Pn0,Pn1)/norm(fund(Pn0,Pn1))) - abs(skew([1 0 0]))));
+
+[im0r,im1r, bb0, bb1] = imrectify(im0,im1,H0,H1,'crop');
 
 %% Calculate Disparity Map
 disp("Computing disparity map...");
 do_debug = 0;
 if do_debug
-    D = disparity(im0g, im1g);
+    D = disparity(im0r, im1r);
 else
-    D = dmap(im0g, im1g);
+    D = dmap(im0r, im1r);
     %D = dynamic_programming(im0g, im1g);
     
     %[D, sim, o3] = istereo(im0g,im1g,[0 16], 3);

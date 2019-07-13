@@ -6,7 +6,7 @@ P = inputParser;
 
 % gewuenschte Wahrscheinlichkeit, dass der Algorithmus einen Satz
 % Korrespondenzpunktpaare liefert, in dem sich kein Ausreisser befindet
-P.addOptional('p', 0.999, @(x)isnumeric(x) && x > 0 && x < 1)
+P.addOptional('p', 0.5, @(x)isnumeric(x) && x > 0 && x < 1)
 
 % geschaetzte Wahrscheinlichkeit, dass ein zufaellig gewaehltes
 % Korrespondenzpunktpaar ein Ausreisser ist

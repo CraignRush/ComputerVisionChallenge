@@ -10,7 +10,7 @@ fig = figure('Name',['Computer Vision - ' scene_path], ...
 tabgp = uitabgroup(fig);
 tab(1) = uitab(tabgp, 'Title', 'Original');
 tax(1) = axes('Parent', tab(1));
-imshow([im0,im1],'Parent',tax(1));
+imshow([im0,im1],'Parent',tax(1),'InitialMagnification', 'fit');
 
 %%
 im0g_fft = fftshift(fft2(im0g));
