@@ -21,7 +21,7 @@ function Korrespondenzen = punkt_korrespondenzen_jo(I1,I2,Mpt1,Mpt2,varargin)
     window_length = p.Results.window_length;
     min_corr = p.Results.min_corr;
     do_plot = p.Results.do_plot;
-    
+    min_correspondences = 20;
     %% Merkmalsvorbereitung
     edges = zeros(4,2);
     % Edges corrected by window size (1:l, 2:b, 3:r, 4:t)
@@ -72,6 +72,14 @@ function Korrespondenzen = punkt_korrespondenzen_jo(I1,I2,Mpt1,Mpt2,varargin)
  
  %% NCC Berechung 
     NCC_matrix = 1/(window_length*window_length-1) * Mat_feat_2' * Mat_feat_1;
+    
+    % Since at least 8 (7?) correspondences are required, optimize min_corr
+    % accordingly
+    n_corresp = sum(NCC_matrix > min_corr, 'all');
+    while (n_corresp < min_correspondences) && (min_corr > 0)
+        min_corr = min_corr - 0.01;
+        n_corresp = sum(NCC_matrix > min_corr, 'all');
+    end
     NCC_matrix(NCC_matrix < min_corr) = 0;
     
     [sorted_list,sorted_index] = sort(NCC_matrix(:),'descend');
@@ -83,8 +91,9 @@ function Korrespondenzen = punkt_korrespondenzen_jo(I1,I2,Mpt1,Mpt2,varargin)
    [x,y] = ind2sub(size(NCC_matrix),sorted_index);
   
    [y_unique,y_ind] = unique(y,'stable');  
-  
-   Korrespondenzen = [Mpt1(:,y_unique); Mpt2(:,x(y_ind))]; 
+   [x_unique,x_ind] = unique(x(y_ind),'stable');
+   y_unique = y_unique(x_ind);
+   Korrespondenzen = [Mpt1(:,y_unique); Mpt2(:,x_unique)]; 
   
    
     %% Zeige die Korrespondenzpunktpaare an

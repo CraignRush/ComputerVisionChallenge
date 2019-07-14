@@ -95,7 +95,7 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     if strcmp(method, 'matlabgrader')
         correspondence = correspondence_matlabgrader(im0g,im1g,feature0, feature1);
     elseif strcmp(method,'jo')
-        correspondence = punkt_korrespondenzen_jo(im0g,im1g,feature0,feature1,'min_corr', 0.95, 'do_plot', false);
+        correspondence = punkt_korrespondenzen_jo(im0g,im1g,feature0,feature1,'min_corr', 0.99, 'do_plot', false);
     elseif strcmp(method,'daniel')
         sig0 = correspondence_daniel(im0g,im0,feature0,'gray_weight',6,'pos_weight',1);
         sig1 = correspondence_daniel(im1g,im1,feature1,'gray_weight',6,'pos_weight',1);
