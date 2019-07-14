@@ -1,25 +1,27 @@
+addpath(genpath('lib'));
+
 %%
 scene_path = 'test/motorcycle';
 im0 = imread([scene_path '/im0.png']);
 im0g= rgb_to_gray(im0);
 im1 = imread([scene_path '/im1.png']);
 im1g= rgb_to_gray(im1);
-
+%%
 fig = figure('Name',['Computer Vision - ' scene_path], ...
-    'NumberTitle','off'); %, 'WindowState','minimized');
+    'NumberTitle','off','WindowStyle','docked');
 tabgp = uitabgroup(fig);
 tab(1) = uitab(tabgp, 'Title', 'Original');
 tax(1) = axes('Parent', tab(1));
-imshow([im0,im1],'Parent',tax(1), 'InitialMagnification','fit');
+imshow([im0,im1],'Parent',tax(1), 'InitialMagnification','fit','Border','tight');
 
 %%
 im0g_fft = fftshift(fft2(im0g));
 im1g_fft = fftshift(fft2(im1g));
 
 %%
-tab(2) = uitab(tabgp, 'Title', 'FFT2');
-tax(2) = axes('Parent', tab(2));
-imagesc(log2(abs([im0g_fft,im1g_fft])),'Parent',tax(2));
+tab = [tab,uitab(tabgp, 'Title', 'FFT2')];
+tax = [tax,axes('Parent', tab(end))];
+imagesc(log2(abs([im0g_fft,im1g_fft])),'Parent',tax(end));
 
 %%
 im0g_fft_fil = im0g_fft;
@@ -31,9 +33,9 @@ im1g_fft_fil(floor(end/2-end*0.1):ceil(end/2+end*0.1),floor(end/2-end*0.1):ceil(
 im1g_fil = real(ifft2(fftshift(im1g_fft_fil)));
 
 %%
-tab(3) = uitab(tabgp, 'Title', 'Filtered');
-tax(3) = axes('Parent', tab(3));
-imshow([im0g_fil,im0g_fil],'Parent',tax(3));
+tab = [tab,uitab(tabgp, 'Title', 'Filtered')];
+tax = [tax,axes('Parent', tab(end))];
+imshow([im0g_fil,im0g_fil],'Parent',tax(end),'InitialMagnification', 'fit','Border','tight');
 
 %%
 im0bw = im0g;
@@ -45,20 +47,43 @@ threshold1 = median(im1g,'all');
 im1bw(im1bw>threshold1) = 255;
 im1bw(im1bw<=threshold1) = 0;
 
-tab(4) = uitab(tabgp, 'Title', 'Discrete');
-tax(4) = axes('Parent', tab(4));
-imshow([im0bw,im1bw],'Parent',tax(4));
+tab = [tab,uitab(tabgp, 'Title', 'Discrete')];
+tax = [tax,axes('Parent', tab(end))];
+imshow([im0bw,im1bw],'Parent',tax(end),'InitialMagnification', 'fit','Border','tight');
 
 %% Feature extraction
 % Optionally add: 'segment_length',9,'k',0.05,'min_dist',50,'N',20
-feature0 = harris_detektor(im0bw, 'segment_length',9,'k',0.05,'min_dist',30,'N',20 ); 
-feature1 = harris_detektor(im1bw, 'segment_length',9,'k',0.05,'min_dist',30,'N',20 );
+feature0 = harris_detektor(im0g, 'segment_length',9,'k',0.05,'min_dist',30,'N',20 ); 
+feature1 = harris_detektor(im1g, 'segment_length',9,'k',0.05,'min_dist',30,'N',20 );
 
 %%
-tab(5) = uitab(tabgp, 'Title', 'Harris Detection');
-tax(5) = axes('Parent', tab(5));
-imshow(uint8([im0g,im1g]), 'Parent',tax(5)); hold on;
-plot(tax(5),[feature0(1,:),feature1(1,:)+size(im0g,2)],[feature0(2,:),feature1(2,:)],'go'); 
+tab = [tab,uitab(tabgp, 'Title', 'Harris (Own)')];
+tax = [tax,axes('Parent', tab(end))];
+imshow(uint8([im0g,im1g]), 'Parent',tax(end),'InitialMagnification', 'fit','Border','tight'); hold on;
+plot(tax(end),[feature0(1,:),feature1(1,:)+size(im0g,2)],[feature0(2,:),feature1(2,:)],'go'); 
+
+%% Fearure extraction Matlab
+feature0_ = detectHarrisFeatures(im0g);
+feature1_ = detectHarrisFeatures(im1g);
+
+%%
+tab = [tab,uitab(tabgp, 'Title', 'Harris (Matlab)')];
+tax = [tax,axes('Parent', tab(end))];
+imshow(uint8([im0g,im1g]), 'Parent',tax(end)); hold on;
+plot(tax(end),[feature0_.Location(:,1);feature1_.Location(:,1)+size(im0g,2)],[feature0_.Location(:,2);feature1_.Location(:,2)],'go'); 
+
+%%
+[f1, vpts1] = extractFeatures(im0g, feature0_); %cornerPoints(feature0'));
+[f2, vpts2] = extractFeatures(im1g, feature1_); %cornerPoints(feature1'));
+
+tab = [tab, uitab(tabgp, 'Title', 'Features (Matlab)')];
+tax = [tab,axes('Parent', tab(end))];
+imshow([im0g,im1g],'Parent',tax(end)); hold on;
+
+vpts1 = vpts1.Location;
+vpts2 = vpts2.Location;
+%plot(tax(end),[f1_(:,1); f2_(:,1)+size(I1,2)],[f1_(:,2);f2_(:,2)],'g+');
+plot(tax(end),[vpts1_(:,1); vpts2_(:,1)+size(I1,2)],[vpts1_(:,2);vpts2_(:,2)],'ro');
 
 %% Correspondence estimation
 % Optionally adD: 'window_length',25,'min_corr', 0.90
@@ -66,36 +91,36 @@ correspondence = punkt_korrespondenzen(im0g,im1g,feature0,feature1, ...
     'min_corr', 0.99, 'do_plot', false);
 
 %% Plot Correspondence
-tab(6) = uitab(tabgp, 'Title', 'Correspondence');
-tax(6) = axes('Parent', tab(6));
+tab = [tab,uitab(tabgp, 'Title', 'Correspondence')];
+tax = [tax,axes('Parent', tab(end))];
 
 title 'Correspondence Estimation';
 
-imshow(uint8([im0g,im1g]),'Parent',tax(6)); hold on;
-plot(tax(6),[correspondence(1,:),correspondence(3,:)+size(im0g,2)],[correspondence(2,:),correspondence(4,:)],'go');
+imshow(uint8([im0g,im1g]),'Parent',tax(end)); hold on;
+plot(tax(end),[correspondence(1,:),correspondence(3,:)+size(im0g,2)],[correspondence(2,:),correspondence(4,:)],'go');
 % plot the line
 for i=1:size(correspondence,2)
     pt1 = [correspondence(1,i), correspondence(3,i)+size(im0g,2)];
     pt2 = [correspondence(2,i), correspondence(4,i)];
-    line(tax(6),pt1,pt2);
+    line(tax(end),pt1,pt2);
 end
 
 %% Find robust correspondence point pairs with RANSAC-algorithm
 correspondence = F_ransac(correspondence, 'tolerance', 0.1);
 
 %% Plot robust Correspondence
-tab(7) = uitab(tabgp, 'Title', 'Correspondence (Robust)');
-tax(7) = axes('Parent', tab(7));
+tab = [tab,uitab(tabgp, 'Title', 'Correspondence (Robust)')];
+tax = [tax,axes('Parent', tab(end))];
 
 title 'Robust Correspondence Estimation';
 
-imshow(uint8([im0g,im1g]),'Parent',tax(7)); hold on;
-plot(tax(7),[correspondence(1,:),correspondence(3,:)+size(im0g,2)],[correspondence(2,:),correspondence(4,:)],'go');
+imshow(uint8([im0g,im1g]),'Parent',tax(end)); hold on;
+plot(tax(end),[correspondence(1,:),correspondence(3,:)+size(im0g,2)],[correspondence(2,:),correspondence(4,:)],'go');
 % plot the line
 for i=1:size(correspondence,2)
     pt1 = [correspondence(1,i), correspondence(3,i)+size(im0g,2)];
     pt2 = [correspondence(2,i), correspondence(4,i)];
-    line(tax(7),pt1,pt2);
+    line(tax(end),pt1,pt2);
 end
 
 %%
@@ -189,16 +214,16 @@ end
 correspondence_ = F_ransac(correspondence_, 'tolerance', 0.1);
 
 %% Plot
-tab(8) = uitab(tabgp, 'Title', 'Correspondence (Own)');
-tax(8) = axes('Parent', tab(8));
+tab = [tab,uitab(tabgp, 'Title', 'Correspondence (Own)')];
+tax = [tax,axes('Parent', tab(end))];
 title 'Own Correspondence Estimation';
-imshow(uint8([im0g,im1g]),'Parent',tax(8)); hold on;
-plot(tax(8),[correspondence_(1,:),correspondence_(3,:)+size(im0g,2)], ...
+imshow(uint8([im0g,im1g]),'Parent',tax(end)); hold on;
+plot(tax(end),[correspondence_(1,:),correspondence_(3,:)+size(im0g,2)], ...
     [correspondence_(2,:),correspondence_(4,:)],'go');
 for i=1:size(correspondence_,2)
     pt1 = [correspondence_(1,i), correspondence_(3,i)+size(im0g,2)];
     pt2 = [correspondence_(2,i), correspondence_(4,i)];
-    line(tax(8),pt1,pt2);
+    line(tax(end),pt1,pt2);
 end
     
 %% Matlab: Harris
