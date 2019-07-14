@@ -216,7 +216,7 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     %% Calculate Disparity Map
    
     if do_debug
-        D = disparity(im0g, im1g);
+        D = disparitySGM(im0g, im1g);
     else
         D = dmap(im0g, im1g);
     end

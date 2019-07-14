@@ -24,7 +24,7 @@ tax = [tax,axes('Parent', tab(end))];
 imagesc(log2(abs([im0g_fft,im1g_fft])),'Parent',tax(end));
 
 %%
-filter_percentage = 0.01;
+filter_percentage = 0.05;
 im0g_fft_fil = im0g_fft;
 im0g_fft_fil(floor(end/2-end*filter_percentage):ceil(end/2+end*filter_percentage),floor(end/2-end*filter_percentage):ceil(end/2+end*filter_percentage)) = 0;
 im0g_fil = uint8(real(ifft2(fftshift(im0g_fft_fil))));
