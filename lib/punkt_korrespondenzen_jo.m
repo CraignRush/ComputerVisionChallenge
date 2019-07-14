@@ -1,4 +1,4 @@
-function Korrespondenzen = punkt_korrespondenzen(I1,I2,Mpt1,Mpt2,varargin)
+function Korrespondenzen = punkt_korrespondenzen_jo(I1,I2,Mpt1,Mpt2,varargin)
     % In dieser Funktion sollen die extrahierten Merkmalspunkte aus einer
     % Stereo-Aufnahme mittels NCC verglichen werden um Korrespondenzpunktpaare
     % zu ermitteln.
@@ -10,7 +10,7 @@ function Korrespondenzen = punkt_korrespondenzen(I1,I2,Mpt1,Mpt2,varargin)
     validationFcn{2} = @(x) isnumeric(x) && x>0 && x<1;
     
     p.addOptional('window_length',25,validationFcn{1});
-    p.addOptional('min_corr',0.95,validationFcn{2});
+    p.addOptional('min_corr',0.9,validationFcn{2});
     p.addOptional('do_plot', false, @islogical);
     
     p.parse(varargin{:});

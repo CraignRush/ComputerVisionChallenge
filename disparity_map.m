@@ -10,7 +10,7 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     
     % Liste der optionalen Parameter
     P.addOptional('do_debug', false, @islogical);
-    P.addOptional('method','daniel',@ischar);
+    P.addOptional('method','jo',@ischar);
     
     % Lese den Input
     P.parse(varargin{:});
@@ -58,40 +58,27 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     %% Create calibration variables
     evalc(cal);
     
+    %% High pass filter
+    im0g_fft = fftshift(fft2(im0g));
+    im1g_fft = fftshift(fft2(im1g));
+    
+    filter_percentage = 0.01;
+    im0g_fft_fil = im0g_fft;
+    im0g_fft_fil(floor(end/2-end*filter_percentage):ceil(end/2+end*filter_percentage),floor(end/2-end*filter_percentage):ceil(end/2+end*filter_percentage)) = 0;
+    im0g_fil = uint8(real(ifft2(fftshift(im0g_fft_fil))));
+
+    im1g_fft_fil = im1g_fft;
+    im1g_fft_fil(floor(end/2-end*filter_percentage):ceil(end/2+end*filter_percentage),floor(end/2-end*filter_percentage):ceil(end/2+end*filter_percentage)) = 0;
+    im1g_fil = uint8(real(ifft2(fftshift(im1g_fft_fil))));
+    
     %% Feature extraction
     % Optionally add: 'segment_length',9,'k',0.05,'min_dist',50,'N',20
-    im0bw = im0g; threshold0 = median(im0g,'all');
-    im0bw(im0bw>threshold0) = 255;
-    im0bw(im0bw<=threshold0) = 0;
-    im1bw = im1g; threshold1 = median(im1g,'all');
-    im1bw(im1bw>threshold1) = 255;
-    im1bw(im1bw<=threshold1) = 0;
-    do_extract_color_feature = do_debug & ~do_debug;
     
-    feature0 = harris_detektor( im0bw, 'segment_length', 9, 'k', 0.05, ...
-        'min_dist', 30, 'N', 20 ); 
-    feature0 = [feature0,harris_detektor( im0g, 'segment_length', 9, 'k', 0.05, ...
-        'min_dist', 30, 'N', 20 )]; 
-    if do_extract_color_feature
-        feature0 = [feature0,harris_detektor( im0(:,:,1), ...
-            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )]; 
-        feature0 = [feature0,harris_detektor( im0(:,:,2), ...
-            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )]; 
-        feature0 = [feature0,harris_detektor( im0(:,:,3), ...
-            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )]; 
-    end
-    feature1 = harris_detektor( im1bw, 'segment_length', 9, 'k', 0.05, ...
-        'min_dist', 30, 'N', 20 );
-    feature1 = [feature1, harris_detektor( im1g, 'segment_length', 9, 'k', 0.05, ...
-        'min_dist', 30, 'N', 20 )];
-    if do_extract_color_feature
-        feature1 = [feature1, harris_detektor( im1(:,:,1), ...
-            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )];
-        feature1 = [feature1, harris_detektor( im1(:,:,2), ...
-            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )];
-        feature1 = [feature1, harris_detektor( im1(:,:,3), ...
-            'segment_length', 9, 'k', 0.05, 'min_dist', 30, 'N', 20 )];
-    end
+    har_det = @(img) harris_detektor(img,'segment_length',9,'k',0.05, ...
+        'min_dist',30,'N',20);
+    
+    feature0 = [har_det(im0g_fil), har_det(im0g)]; 
+    feature1 = [har_det(im1g_fil), har_det(im1g)]; 
     
     if do_debug
         tab = [tab,uitab(tabgp, 'Title', 'Harris Detection')];
@@ -108,7 +95,7 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     if strcmp(method, 'matlabgrader')
         correspondence = correspondence_matlabgrader(im0g,im1g,feature0, feature1);
     elseif strcmp(method,'jo')
-        correspondence = punkt_korrespondenzen_jo(im0g,im1g,feature0,feature1);
+        correspondence = punkt_korrespondenzen_jo(im0g,im1g,feature0,feature1,'min_corr', 0.95, 'do_plot', false);
     elseif strcmp(method,'daniel')
         sig0 = correspondence_daniel(im0g,im0,feature0,'gray_weight',6,'pos_weight',1);
         sig1 = correspondence_daniel(im1g,im1,feature1,'gray_weight',6,'pos_weight',1);
@@ -159,7 +146,7 @@ function [D, R, T] = disparity_map(scene_path, varargin)
 
     %% Correspondence estimation - Find Robust Match
     %  Find robust correspondence point pairs with RANSAC-algorithm
-    correspondence = F_ransac(correspondence, 'tolerance', 1);
+    correspondence = F_ransac(correspondence, 'tolerance', 0.04);
     
     if do_debug
         tab = [tab,uitab(tabgp, 'Title', 'Correspondence (Robust)')];

@@ -42,7 +42,7 @@ function [Korrespondenzen_robust, F] = F_ransac(Korrespondenzen, varargin)
     
     %% RANSAC Algorithmus
     
-    for i = 1:s*10
+    for i = 1:s*100
         % Fundamentalmatrix F aus k zufaellig gewaelten Korrespondenzpunktpaaren
         F = achtpunktalgorithmus(Korrespondenzen(:,randperm(length(Korrespondenzen),k)));
         
