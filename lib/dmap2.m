@@ -30,12 +30,21 @@ D_map = zeros(size(leftI));
 imL = double(leftI_fil);
 imR = double(rightI_fil);
 
+last_id = 1;
+
 for i = ceil(window_size/2):floor(size(leftI,1)-floor(window_size/2))
     for j = ceil(window_size/2):floor(size(leftI,2)-floor(window_size/2))
         costs = Inf(1,length(d_list));
-        for i_d = 1:length(d_list)
+        minimum = [];
+        for i_d = [last_id:length(d_list),1:last_id]
             costs(i_d) = cost(imL,imR,i,j,d_list(i_d),window_size);
+            if costs(i_d) < minimum(1)
+                minimum = [costs(i_d), d_list(i_d), i_d];
+            else
+                
+            end
         end
+        last_id = minimum(2);
         [~, min_idx] = min(costs);
         D_map(i,j) = d_list(min_idx);
     end
