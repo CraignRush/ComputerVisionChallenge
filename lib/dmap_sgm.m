@@ -2,6 +2,8 @@ function D = dmap_sgm(im0,im1)
 % See: https://github.com/epiception/SGM-Census/blob/master/sgm.cpp
 % See: https://core.ac.uk/download/pdf/11134866.pdf
 
+    %% Downscale image
+
     %% Joint probability
     P_01 = histcounts2(im0(:),im1(:),0:258,0:256);
     P_0  = sum(P_01, 2);
@@ -56,61 +58,84 @@ function D = dmap_sgm(im0,im1)
             C_MI(p,d) = -mi_I0I1(im0(p)+1,im1(max(p-d,1))+1);
         end
     end
+    
+    % Repeat a few times
+    for iteration = 1:3
+        %% Calculate disparity energy for D
+        P1 = 1;
+        P2 = 2;
+        all_points = 1:numel(im0);
+        E = 0;
+        for p = all_points
+            E = E + C_MI(p,D(p));
+            [p_x, p_y] = ind2sub(size(im0),p);
+            q = [sub2ind(size(im0),max(p_x - 1,1), p_y); ...
+                sub2ind(size(im0),min(p_x + 1,size(im0,1)), p_y); ...
+                sub2ind(size(im0),p_x, max(p_y - 1,1)); ...
+                sub2ind(size(im0),p_x, min(p_y + 1,size(im0,2)))];
+            E = E + P1*sum(abs(D(p) - D(q))==1) + P2*sum(abs(D(p) - D(q)) > 1);
+        end
 
-    %% Calculate disparity energy for D
-    P1 = 1;
-    P2 = 2;
-    all_points = 1:numel(im0);
-    E = 0;
-    for p = all_points
-        E = E + C_MI(p,D(p));
-        [p_x, p_y] = ind2sub(size(im0),p);
-        q = [sub2ind(size(im0),max(p_x - 1,1), p_y); ...
-            sub2ind(size(im0),min(p_x + 1,size(im0,1)), p_y); ...
-            sub2ind(size(im0),p_x, max(p_y - 1,1)); ...
-            sub2ind(size(im0),p_x, min(p_y + 1,size(im0,2)))];
-        E = E + P1*sum(abs(D(p) - D(q))==1) + P2*sum(abs(D(p) - D(q)) > 1);
-    end
-    
-    %% Cost aggregarion
-    
-    % Scale C with Cmax < 2^11
-    s = (2^11-1) / max(C_MI,[],'all');
-    
-    S = zeros(numel(im0),numel(d_list));
-    L = zeros(8, numel(im0), numel(d_list));
-    border_pixels = []; % ToDo
-    
-    % Traversing the paths forward in each direction r (16...)
-    for r = 1:8
-        last_k = Inf(1,numel(d_list));
-        for x = 1:size(im0,1)
-            for y = 1:size(im0,2)
-                idx = sub2ind(size(im0),x,y);
-                
-                % If border pixel
-                if x==1 || x ==size(im0,1) || y==1 || y==size(im0,2)
-                    L(r,idx,:) = s*C_MI(idx,:);
-                else
-                    [dx_r, dy_r] = r_to_delta(r,8);
-                    ind_r = sub2ind(size(im0),x+dx_r,y+dy_r);
-                    t1=reshape(L(r,ind_r,:),1,[]);
-                    t2=L(r,ind_r,1);
-                    t2=[t2, reshape(min(L(r,ind_r,1:end-2),L(r,ind_r,3:end)),1,[])];
-                    t2=[t2, L(r,ind_r,end-1)];
-                    
-                    t1(reshape(L(r,ind_r,:),1,[])<t1-20) = L(r,ind_r,reshape(L(r,ind_r,:),1,[])<t1-20)+20;
-                    
-                    L(r,idx,:) = C_MI(idx,:)+min(t1,t2)-last_k;
+        %% Cost aggregarion
+
+        % Scale C with Cmax < 2^11
+        s = (2^11-1) / max(C_MI,[],'all');
+
+        S = zeros(numel(im0),numel(d_list));
+        L = zeros(8, numel(im0), numel(d_list));
+        border_pixels = []; % ToDo
+
+        % Traversing the paths forward in each direction r (16...)
+        for r = 1:8
+            last_k = Inf(1,numel(d_list));
+            for x = 1:size(im0,1)
+                for y = 1:size(im0,2)
+                    idx = sub2ind(size(im0),x,y);
+
+                    % If border pixel
+                    if x==1 || x ==size(im0,1) || y==1 || y==size(im0,2)
+                        L(r,idx,:) = s*C_MI(idx,:);
+                    else
+                        % Maybe here is the dog inside?
+                        
+                        [dx_r, dy_r] = r_to_delta(r,8);
+                        ind_r = sub2ind(size(im0),x+dx_r,y+dy_r);
+                        t1=reshape(L(r,ind_r,:),1,[]);
+                        t2=L(r,ind_r,1);
+                        t2=[t2, reshape(min(L(r,ind_r,1:end-2),L(r,ind_r,3:end)),1,[])];
+                        t2=[t2, L(r,ind_r,end-1)];
+
+                        t1(reshape(L(r,ind_r,:),1,[])<t1-20) = L(r,ind_r,reshape(L(r,ind_r,:),1,[])<t1-20)+20;
+
+                        L(r,idx,:) = C_MI(idx,:)+min(t1,t2)-last_k;
+                    end
+                    last_k(reshape(L(r,idx,:),1,[])<last_k) = L(r,idx,reshape(L(r,idx,:),1,[])<last_k);
+
+                    S(idx,:) = S(idx,:) + reshape(L(r,idx,:),1,[]);
                 end
-                last_k(reshape(L(r,idx,:),1,[])<last_k) = L(r,idx,reshape(L(r,idx,:),1,[])<last_k);
-                
-                S(idx,:) = S(idx,:) + reshape(L(r,idx,:),1,[]);
+            end
+        end
+
+        % Get D_b of base image
+        [~,D_idx] = min(S,[],2);    
+        D_b = reshape(d_list(D_idx),size(im0));
+
+        % Calculate D_m of right image
+        % D_m = D right: min_d S[emb(q, d), d] with emb(q,d) = I(qx-d,qy)
+
+        %% Calculate D by merging D_b and D_m
+        D_inv = 0; % D invalid
+        D = D_b*0 + D_inv;
+        for p = 1:numel(D)
+            idx = ind2sub(size(D),p);
+            if abs( D_b(p) - D_m(idx(1)-D_b(p),idx(2)) ) <= 1
+                D(p) = D_b(p);
             end
         end
     end
     
-    D = S;    
+    %% Upscale image
+    
 end
 
 %%
