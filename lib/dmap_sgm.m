@@ -1,6 +1,8 @@
 function D = dmap_sgm(im0,im1)
 % See: https://github.com/epiception/SGM-Census/blob/master/sgm.cpp
 % See: https://core.ac.uk/download/pdf/11134866.pdf
+% http://www.cs.cornell.edu/~rdz/Papers/KKZ-ICCV03.pdf
+% https://arxiv.org/pdf/1905.03716.pdf
 
     %% Downscale image
 
@@ -67,7 +69,7 @@ function D = dmap_sgm(im0,im1)
         all_points = 1:numel(im0);
         E = 0;
         for p = all_points
-            E = E + C_MI(p,D(p));
+            E = E + C_MI(p,D(p)+1);
             [p_x, p_y] = ind2sub(size(im0),p);
             q = [sub2ind(size(im0),max(p_x - 1,1), p_y); ...
                 sub2ind(size(im0),min(p_x + 1,size(im0,1)), p_y); ...
@@ -122,13 +124,17 @@ function D = dmap_sgm(im0,im1)
 
         % Calculate D_m of right image
         % D_m = D right: min_d S[emb(q, d), d] with emb(q,d) = I(qx-d,qy)
-
+        D_bt = D_b';
+        [~,D_idx] = min(S(1:size(S,1)-D_bt(:),:),[],2);    
+        D_m = reshape(d_list(D_idx),size(im0));
+        
+        
         %% Calculate D by merging D_b and D_m
         D_inv = 0; % D invalid
         D = D_b*0 + D_inv;
         for p = 1:numel(D)
-            idx = ind2sub(size(D),p);
-            if abs( D_b(p) - D_m(idx(1)-D_b(p),idx(2)) ) <= 1
+            [idx1,idx2] = ind2sub(size(D),p);
+            if abs( D_b(p) - D_m(max(idx1-D_b(p),1),idx2) ) <= 1
                 D(p) = D_b(p);
             end
         end
