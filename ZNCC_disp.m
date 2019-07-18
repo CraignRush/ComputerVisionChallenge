@@ -13,6 +13,25 @@ for i = 1:length(scene_path)
     im1 = imread([scene_path{i} '/im1.png']);
     im1g= rgb_to_gray(im1);
     
+    %% Filter high pass
+    im0g_fft = fftshift(fft2(im0g));
+    im1g_fft = fftshift(fft2(im1g));
+    
+    filter_percentage = 0.05;
+    im0g_fft_fil = im0g_fft;
+    im0g_fft_fil(floor(end/2-end*filter_percentage):...
+        ceil(end/2+end*filter_percentage),...
+        floor(end/2-end*filter_percentage):...
+        ceil(end/2+end*filter_percentage)) = 0;
+    im0g_fil = uint8(real(ifft2(fftshift(im0g_fft_fil))));
+    
+    im1g_fft_fil = im1g_fft;
+    im1g_fft_fil(floor(end/2-end*filter_percentage):...
+        ceil(end/2+end*filter_percentage),...
+        floor(end/2-end*filter_percentage):...
+        ceil(end/2+end*filter_percentage)) = 0;
+    im1g_fil = uint8(real(ifft2(fftshift(im1g_fft_fil))));
+    
     %% Fast Params
     %scale = 0.1; window = 5; disparity_max = 30;% ~ 15s
     
@@ -26,8 +45,8 @@ for i = 1:length(scene_path)
     %scale = 1; window = 49; disparity_max = 200;% ~ ? h
     
     %% Shrink images
-    im0_small = interpolateImage(im0g,scale);
-    im1_small = interpolateImage(im1g,scale);
+    im0_small = interpolateImage(im0g_fil,scale);
+    im1_small = interpolateImage(im1g_fil,scale);
     
     %% Compute Disparity
     % window = 5;
@@ -37,7 +56,7 @@ for i = 1:length(scene_path)
     %% Bringing time into a readable format
     fprintf("Time taken: %02.0f:%02.0f:%02.3f \n",timeTaken/3600,timeTaken/60,mod(timeTaken,60));
     
-    %% Normalizing image to [0 255]    
+    %% Normalizing image to [0 255]
     disp_norm = uint8((dispMap - min(dispMap(:))) ./ max([dispMap - min(dispMap(:))]) .* 255);
     
     %% Displaying originally computed disparity map
