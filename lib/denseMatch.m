@@ -136,7 +136,7 @@ for(i=1+win:1:nrLeft-win)
         % matched
         % disparity score
         bestMatchSoFar = dMin;
-        for(d=dMin:5:dMax)
+        for(d=dMin:dMax)
             % For every disparity value in x-direction
             % Construct a region with window around
             % central/selected pixel in left image
