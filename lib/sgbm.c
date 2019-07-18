@@ -8,11 +8,9 @@
 
 #include <math.h>
 
-#define BLUR_RADIUS 3
 #define PATHS_PER_SCAN 8
 #define SMALL_PENALTY 3
 #define LARGE_PENALTY 20
-#define DEBUG false
 #define window_height 9
 #define window_width 9
 
@@ -105,8 +103,8 @@ void mexFunction( int nlhs, mxArray *plhs[],
     }
 
     //Initial Smoothing
-    GaussianBlur( im0, BLUR_RADIUS, 0, 0);
-    GaussianBlur( im1, BLUR_RADIUS, 0, 0);
+    GaussianBlur( im0, 3, 0, 0);
+    GaussianBlur( im1, 3, 0, 0);
 
     // Calculate costs
     calculateCostHamming(im0, im1, disparityRange, C, S, (int) nrows, (int) ncols);
@@ -200,11 +198,6 @@ void init_paths(int image_height, int image_width, struct limits *paths)
             paths[i].start_pt_x = image_height - window_height/2;
             paths[i].end_pt_x = window_height/2;
             break;
-
-            default:
-            //cout << "More paths or this is not possible" <<endl;
-            break;
-
         }
     }
 }
@@ -261,8 +254,6 @@ void calculateCostHamming(unsigned char *firstImage, unsigned char *secondImage,
             imgTemp_left[x][y] = (short)census_left;
             census_vleft[x][y]=census_left;
 
-
-
             census_right = 0;
             shiftCount = 0;
             bit_counter=0;
@@ -293,10 +284,7 @@ void calculateCostHamming(unsigned char *firstImage, unsigned char *secondImage,
         }
 
     }
-    //imwrite("Census_transform_output_left.png",imgTemp_left);
-    //imwrite("Census_transform_output_right.png",imgTemp_right);
 
-    //cout <<"\nFinding Hamming Distance" <<endl;
     for(x = window_height/2; x < image_height - window_height/2; x++)
     {
         for(y = window_width/2; y < image_width - window_width/2; y++)
@@ -341,9 +329,6 @@ void calculateCostHamming(unsigned char *firstImage, unsigned char *secondImage,
             disparityMapstage1[col][row] = (short) smallest_disparity*255.0/disparityRange; //Least cost Disparity
         }
     }
-
-    //imwrite("disparityMap_stage_1.png", disparityMapstage1);
-
 }
 
 void disprange_aggregation(int disparityRange,C_TYPE ***C, A_TYPE ****A, long unsigned last_aggregated_k, int direction_x, int direction_y, int curx, int cury, int current_path, int image_width, int image_height)
@@ -400,7 +385,6 @@ void aggregation(unsigned char *firstImage, unsigned char *secondImage, int disp
             int dirx = paths[ch_path].direction_x;
             int diry = paths[ch_path].direction_y;
             int next_dim = 0;
-            //cout << "\n PATH: " << ch_path << endl;
             if(dirx == 0)
                 next_dim = 1;
             else
@@ -420,7 +404,6 @@ void aggregation(unsigned char *firstImage, unsigned char *secondImage, int disp
             int dirx = paths[ch_path].direction_x;
             int diry = paths[ch_path].direction_y;
             int next_dim = 0;
-            //cout << "\n PATH: " << ch_path << endl;
             if(diry == 0)
                 next_dim = 1;
             else
@@ -435,10 +418,6 @@ void aggregation(unsigned char *firstImage, unsigned char *secondImage, int disp
 
         }
     }
-
-    //cout << "\nAll paths covered" << endl;
-
-    //cout << "\nFinding summation term" << endl;
 
     for (int row = 0; row < image_height; ++row)
     {
@@ -478,8 +457,5 @@ void computeDisparity(int disparityRange, int rows, int cols, S_TYPE ***S, short
             out_file_name[col*rows+row] = (short) smallest_disparity*255.0/disparityRange;
         }
     }
-
-    //imwrite(out_file_name, disparityMapstage2);
-    //cout <<"\nFin." <<endl;
 }
 

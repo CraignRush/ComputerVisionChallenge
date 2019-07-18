@@ -1,6 +1,8 @@
 %% Computer Vision Challenge 2019
 
+% DEBUG AND HACKING
 dbstop if error
+mex lib/sgbm.c  -output lib/sgbm -O
 
 % Group number:
 group_number = 10;

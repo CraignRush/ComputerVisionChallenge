@@ -214,21 +214,21 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     end
     
     %% Calculate Disparity Map
-   
-    if do_debug
-        D = disparitySGM(im0g, im1g);
-    else
-        D = dmap(im0g, im1g);
-    end
+    im0g_scaled = interpolateImage(im0g,0.25);
+    im1g_scaled = interpolateImage(im1g,0.25);
+    D_ = sgbm(im0g_scaled, im1g_scaled);
+    D = interpolateImage(D_,size(im0g));
     
     % Scale
     D(D < -10) = -10;
     D = (D + 10) ./ max(max(D + 10)) * 255;
     
-%     if do_debug
-%         figure('Name','Disparity Map','NumberTitle','off');
-%         title 'Disparity Map';
-%         imshow(D, disparityRange);
-%         colormap(gca,jet);
-%     end
+    if do_debug
+        tab = [tab,uitab(tabgp, 'Title', 'Disparity')];
+        tax = [tax,axes('Parent', tab(end))];
+        title 'Disparity Map';
+        imshow(D,'Parent',tax(end));
+        colormap(tax(end),jet);
+        colorbar;
+    end
 end
