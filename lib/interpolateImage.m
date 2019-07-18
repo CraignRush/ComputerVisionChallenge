@@ -3,8 +3,14 @@ function [newImg] = interpolateImage(img,scale)
 %% get old image size
 dim = size(img); 
 
-%% compute new size vector
-newDim = dim * scale;
+%% Compute new Dims
+if numel(size(scale)) == 2
+    % set new absolute dims
+    newDim = scale;
+elseif numel(size(scale)) == 1
+    % compute new size vector proportional to old dims    
+    newDim = dim * scale;
+end
 
 %% Init pixel coordinates
 [X, Y] = meshgrid( 1:dim(2), 1:dim(1) );
@@ -17,5 +23,5 @@ vecDim{2} = linspace( 1, dim(1), newDim(1) );
 [newX, newY] = meshgrid(vecDim{1}, vecDim{2}); 
 
 %% Interpolate from complete image
-newImg = interp2(X, Y, img, newX, newY, 'nearest'); 
+newImg = interp2(X, Y, img, newX, newY, 'nearest'); %nearest
 end
