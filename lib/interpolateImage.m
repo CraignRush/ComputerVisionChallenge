@@ -4,10 +4,10 @@ function [newImg] = interpolateImage(img,scale)
 dim = size(img); 
 
 %% Compute new Dims
-if numel(size(scale)) == 2
+if numel(scale) == 2
     % set new absolute dims
     newDim = scale;
-elseif numel(size(scale)) == 1
+elseif numel(scale) == 1
     % compute new size vector proportional to old dims    
     newDim = dim * scale;
 end
