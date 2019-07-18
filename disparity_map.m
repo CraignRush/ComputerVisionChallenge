@@ -219,15 +219,16 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     D_ = sgbm(im0g_scaled, im1g_scaled);
     D = interpolateImage(D_,size(im0g));
     
-    % Scale
-    D(D < -10) = -10;
-    D = (D + 10) ./ max(max(D + 10)) * 255;
+    %% Scale disparity map
+    scale_factor = 127 / max(abs(min(D,[],'all')),abs(max(D,[],'all')));
+    D = D * scale_factor + 127;
     
+    %% Plot disparity map
     if do_debug
         tab = [tab,uitab(tabgp, 'Title', 'Disparity')];
         tax = [tax,axes('Parent', tab(end))];
         title 'Disparity Map';
-        imshow(D,'Parent',tax(end));
+        imshow(D,[0 255],'Parent',tax(end));
         colormap(tax(end),jet);
         colorbar;
     end

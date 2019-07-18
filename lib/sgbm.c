@@ -208,7 +208,7 @@ void calculateCostHamming(unsigned char *firstImage, unsigned char *secondImage,
     unsigned long census_right = 0;
     unsigned int bit = 0;
 
-    int bit_field=window_width*window_height-1;
+    int bit_field = window_width*window_height-1;
     int i,j,x,y;
     int d=0;
     int shiftCount = 0;
@@ -217,7 +217,7 @@ void calculateCostHamming(unsigned char *firstImage, unsigned char *secondImage,
 
     unsigned char imgTemp_left[image_height][image_width]; // = 0
     unsigned char imgTemp_right[image_height][image_width]; // = 0
-    short disparityMapstage1[ncols][nrows]; // = 0
+    short disparityMapstage1[nrows][ncols]; // = 0
 
 
     long census_vleft[image_height][image_width];
@@ -229,7 +229,7 @@ void calculateCostHamming(unsigned char *firstImage, unsigned char *secondImage,
         {
             census_left = 0;
             shiftCount = 0;
-            int bit_counter=0;
+            int bit_counter = 0;
             int census_array_left[bit_field];
             for (i = x - window_height/2; i <= x + window_height/2; i++)
             {
@@ -238,25 +238,26 @@ void calculateCostHamming(unsigned char *firstImage, unsigned char *secondImage,
                     if( shiftCount != window_width*window_height/2 )//skip the center pixel
                     {
                         census_left <<= 1;
-                        if( firstImage[i*ncols+j] < firstImage[x*ncols+y] ){ //compare pixel values in the neighborhood
+                        if( firstImage[i*nrows+j] < firstImage[x*nrows+y] ){ //compare pixel values in the neighborhood
                             bit = 1;
                         }
                         else{
                             bit = 0;
                         }
                         census_left = census_left | bit;
-                        census_array_left[bit_counter]=bit;bit_counter++;
+                        census_array_left[bit_counter]=bit;
+                        bit_counter++;
                     }
                     shiftCount ++;
                 }
             }
 
             imgTemp_left[x][y] = (short)census_left;
-            census_vleft[x][y]=census_left;
+            census_vleft[x][y] = census_left;
 
             census_right = 0;
-            shiftCount = 0;
-            bit_counter=0;
+            shiftCount   = 0;
+            bit_counter  = 0;
             int census_array_right[bit_field];
             for (i = x - window_height/2; i <= x + window_height/2; i++)
             {
@@ -265,7 +266,7 @@ void calculateCostHamming(unsigned char *firstImage, unsigned char *secondImage,
                     if( shiftCount != window_width*window_height/2 )//skip the center pixel
                     {
                         census_right <<= 1;
-                        if(secondImage[i*ncols+j] < secondImage[x*ncols+y]){ //compare pixel values in the neighborhood
+                        if(secondImage[i*nrows+j] < secondImage[x*nrows+y]){ //compare pixel values in the neighborhood
                             bit = 1;
                         }
                         else{
@@ -326,7 +327,7 @@ void calculateCostHamming(unsigned char *firstImage, unsigned char *secondImage,
                 }
             }
 
-            disparityMapstage1[col][row] = (short) smallest_disparity*255.0/disparityRange; //Least cost Disparity
+            disparityMapstage1[row][col] = (short) smallest_disparity*255.0/disparityRange; //Least cost Disparity
         }
     }
 }
@@ -347,24 +348,26 @@ void disprange_aggregation(int disparityRange,C_TYPE ***C, A_TYPE ****A, long un
         {
             term_1=A[current_path][curx - direction_x][cury-direction_y][d];
             int limit_1,limit_2;
-            if(d==0)
+            if(d==0){
                 term_2=A[current_path][curx - direction_x][cury - direction_y][d+1]+SMALL_PENALTY;
-
-            else if(d==disparityRange-1)
+            }else if(d==disparityRange-1){
                 term_2=A[current_path][curx - direction_x][cury-direction_y][d-1]+SMALL_PENALTY;
-            else
+            }else{
                term_2=min(A[current_path][curx - direction_x][cury-direction_y][d-1]+SMALL_PENALTY,
                           A[current_path][curx - direction_x][cury-direction_y][d+1]+SMALL_PENALTY);
+            }
             for(int pdisp=0;pdisp<disparityRange;pdisp++)
             {
 
-                if((A[current_path][curx][cury-direction_y][pdisp]+LARGE_PENALTY)<term_1)
+                if((A[current_path][curx][cury-direction_y][pdisp]+LARGE_PENALTY)<term_1){
                     term_1=A[current_path][curx- direction_x][cury-direction_y][pdisp]+LARGE_PENALTY;
+                }
             }
             A[current_path][curx][cury][d]=C[curx][cury][d]+min(term_1,term_2)-last_aggregated_k;
         }
-        if(A[current_path][curx][cury][d]<last_aggregated_i)
+        if(A[current_path][curx][cury][d]<last_aggregated_i){
             last_aggregated_i=A[current_path][curx][cury][d];
+        }
 
     }
     last_aggregated_k=last_aggregated_i;
@@ -376,7 +379,6 @@ void aggregation(unsigned char *firstImage, unsigned char *secondImage, int disp
     //Even and Odd paths based on change in X and Y coordinates
 
     for(int ch_path = 0; ch_path < PATHS_PER_SCAN; ++ch_path)
-
     {
         long unsigned last_aggregated_k = 0;
 
@@ -385,10 +387,12 @@ void aggregation(unsigned char *firstImage, unsigned char *secondImage, int disp
             int dirx = paths[ch_path].direction_x;
             int diry = paths[ch_path].direction_y;
             int next_dim = 0;
-            if(dirx == 0)
+            if(dirx == 0){
                 next_dim = 1;
-            else
+            }else{
                 next_dim = dirx;
+            }
+            
             for(int x=paths[ch_path].start_pt_x; x!=paths[ch_path].end_pt_x ;x+=next_dim)
             {
                 for(int y=paths[ch_path].start_pt_y;( y!=paths[ch_path].end_pt_y);y+=diry)
@@ -404,10 +408,11 @@ void aggregation(unsigned char *firstImage, unsigned char *secondImage, int disp
             int dirx = paths[ch_path].direction_x;
             int diry = paths[ch_path].direction_y;
             int next_dim = 0;
-            if(diry == 0)
+            if(diry == 0){
                 next_dim = 1;
-            else
+            }else{
                 next_dim = diry;
+            }
             for(int y=paths[ch_path].start_pt_y; y!=paths[ch_path].end_pt_y ;y+=next_dim)
             {
                 for(int x=paths[ch_path].start_pt_x;( x!=paths[ch_path].end_pt_x);x+=dirx)
@@ -444,15 +449,12 @@ void computeDisparity(int disparityRange, int rows, int cols, S_TYPE ***S, short
             int smallest_disparity=0;
             for(int d=disparityRange-1;d>=0;d--)
             {
-
                 if(S[row][col][d]<smallest_cost)
                 {
                     smallest_cost=S[row][col][d];
                     smallest_disparity=d-disparityRange/2; //Least cost disparity after Aggregation
-
                 }
             }
-
             //disparityMapstage2[col][row] = (short) smallest_disparity*255.0/disparityRange;
             out_file_name[col*rows+row] = (short) smallest_disparity*255.0/disparityRange;
         }

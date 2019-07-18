@@ -47,11 +47,3 @@ disp('Rotation R:'); disp(R);
 disp('Translation T:'); disp(T);
 disp('PSNR p: '); disp(p);
 disp('Elapsed Time: '); disp(elapsed_time);
-
-
-%% Display Disparity
-figure('Name','Disparity Map','NumberTitle','off');
-title 'Disparity Map';
-imshow(D, [0 255]);
-colormap(gca,jet);
-colorbar;
