@@ -16,7 +16,6 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     P.parse(varargin{:});
     
     do_debug = P.Results.do_debug;
-    method   = P.Results.method;
     
     %% Do some typical error checking here
     if do_debug
@@ -216,7 +215,7 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         end
     
     %% Calculate Disparity Map 
-    D_ = denseMatch(im0g_scaled, im1g_scaled,  window,0, disparity_max, 'ZNCC');
+    D_ = denseMatch(im0g_scaled, im1g_scaled,  window,0, disparity_max);
     D = interpolateImage(D_,size(im0g));
 
     %% Depth Calculation
