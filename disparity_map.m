@@ -218,12 +218,12 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     im1g_scaled = interpolateImage(im1g,0.25);
     D_ = sgbm(im0g_scaled, im1g_scaled);
     D = interpolateImage(D_,size(im0g));
-    
+    I_3d = cam1(1,1) * baseline ./ D; % baseline = norm(T,2)???
     %% Scale disparity map
     scale_factor = 127 / max(abs(min(D,[],'all')),abs(max(D,[],'all')));
     D = D * scale_factor + 127;
     
-    %% Plot disparity map
+    %% Plot disparity map and 3D scene
     if do_debug
         tab = [tab,uitab(tabgp, 'Title', 'Disparity')];
         tax = [tax,axes('Parent', tab(end))];
@@ -231,5 +231,10 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         imshow(D,[0 255],'Parent',tax(end));
         colormap(tax(end),jet);
         colorbar;
+        
+        tab = [tab,uitab(tabgp, 'Title', '3D')];
+        tax = [tax,axes('Parent', tab(end))];
+        title '3D Reconstruction';
+        surf(tax(end),I_3d);
     end
 end
