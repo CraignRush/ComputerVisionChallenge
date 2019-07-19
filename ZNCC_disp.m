@@ -5,8 +5,7 @@ addpath(genpath('lib'));
 scene_path = {'test/motorcycle', 'test/playground', ...
     'test/sword',      'test/terrace'   };
 
-for i = 1:length(scene_path)
-    close all;
+for i = 1%1:length(scene_path)
     %% Load images
     im0 = imread([scene_path{i} '/im0.png']);
     im0g= rgb_to_gray(im0);
@@ -31,7 +30,7 @@ for i = 1:length(scene_path)
     %         floor(end/2-end*filter_percentage):...
     %         ceil(end/2+end*filter_percentage)) = 0;
     %     im1g_fil = uint8(real(ifft2(fftshift(im1g_fft_fil))));
-    for j = 2
+    for j = 1
         
         switch j
             case 1
@@ -79,6 +78,39 @@ for i = 1:length(scene_path)
         disp_big = interpolateImage(disp_norm,size(im0g));
         subplot(1,3,2:3); imagesc([im0g disp_big]);title('Disparity Normal with Reference'); colormap hot;
         
+        
+        %% Filter with Gaussian
+        
+        n = numel(im0);
+        mu = 3; sigma = .3;
+        segment_length = 15;
+        
+        % Gaussian Filter
+        gaussian = @(x,mu,sigma) 1/(sigma*sqrt(2*pi))*exp(-1/2*((x-mu)/sigma).^2);
+        w = gaussian(-floor(segment_length/2):1:floor(segment_length/2),0,segment_length/5);
+        w = w/sum(w);
+        
+        disp_test = double(conv2(w,w,disp_big,'same'));
+        disp_test(disp_test < eps) = eps;
+        
+        %% Filter low pass
+        disp_fft = fftshift(fft2(disp_big));
+
+        
+        filter_percentage = 0.9;
+        filter_percentage = filter_percentage/2;
+        disp_fft_fil = disp_fft;
+        disp_fft_fil(floor(1:end/2*filter_percentage):...
+            ceil(1:end/2*filter_percentage),...
+            floor(1:end/2*filter_percentage):...
+            ceil(1:end/2*filter_percentage));
+        disp_fil = uint8(real(ifft2(ifftshift(disp_fft_fil))));
+        
+        disp__fil_norm = uint8((disp_fil) ./ ...
+            max(disp_fil(:)) .* 255);
+        
+        figure;imagesc(disp__fil_norm); colormap hot; colorbar;
+        figure;imagesc(disp_big);
         %% Create storage folder
         folder = ['gen_data_s=' num2str(scale) '_w=' num2str(window)...
             '_mdisp=' num2str(disparity_max)];
