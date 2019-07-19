@@ -25,3 +25,4 @@ vecDim{2} = linspace( 1, dim(1), newDim(1) );
 %% Interpolate from complete image
 newImg = interp2(X, Y, img, newX, newY, 'nearest'); %nearest
 end
+
