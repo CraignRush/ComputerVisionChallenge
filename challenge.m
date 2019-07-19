@@ -1,18 +1,12 @@
 %% Computer Vision Challenge 2019
 
-% DEBUG AND HACKING
-dbstop if error
-%mex lib/sgbm.c  -output lib/sgbm -O
-
 % Group number:
 group_number = 10;
 
 % Group members:
-% members = {'Max Mustermann', 'Johannes Daten'};
 members = {'Michael Maas', 'Alexander Schmaus', 'Johann Brenner', 'Daniel Milz'};
 
 % Email-Address (from Moodle!):
-% mail = {'ga99abc@tum.de', 'daten.hannes@tum.de'};
 mail = {'ga96vur@mytum.de', 'ga96fin@mytum.de', 'ga78zan@mytum.de', 'ga58huv@mytum.de'};
 
 %% Start timer here
