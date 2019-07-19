@@ -1,4 +1,4 @@
-function [Korrespondenzen_robust] = F_ransac(Korrespondenzen, varargin)
+function [Korrespondenzen_robust, F] = F_ransac(Korrespondenzen, varargin)
     % Diese Funktion implementiert den RANSAC-Algorithmus zur Bestimmung von
     % robusten Korrespondenzpunktpaaren
     
@@ -24,7 +24,7 @@ function [Korrespondenzen_robust] = F_ransac(Korrespondenzen, varargin)
     
     %% RANSAC Algorithmus Vorbereitung
     % Anzahl der benoetigten Puntke
-    k = 8;
+    k = 10;
     
     % Die Iterationszahl
     s = ceil( log(1-p)/log(1-(1-epsilon)^k) );
@@ -38,9 +38,11 @@ function [Korrespondenzen_robust] = F_ransac(Korrespondenzen, varargin)
     % Ein Zwischenspeicher für die Fundamentalmatrix mit der das bisher groesste Consensus-Set gefunden wurde
     largest_set_F = zeros(3,3);
     
+    selector = [];
+    
     %% RANSAC Algorithmus
     
-    for i = 1:s
+    for i = 1:s*100
         % Fundamentalmatrix F aus k zufaellig gewaelten Korrespondenzpunktpaaren
         F = achtpunktalgorithmus(Korrespondenzen(:,randperm(length(Korrespondenzen),k)));
         
@@ -66,4 +68,5 @@ function [Korrespondenzen_robust] = F_ransac(Korrespondenzen, varargin)
         end
     end
     Korrespondenzen_robust = [x1_pixel(1:2,selector);x2_pixel(1:2,selector)];
+    F = largest_set_F;
 end

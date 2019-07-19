@@ -1,6 +1,8 @@
 %% Computer Vision Challenge 2019
 
+% DEBUG AND HACKING
 dbstop if error
+mex lib/sgbm.c  -output lib/sgbm -O
 
 % Group number:
 group_number = 10;
@@ -18,10 +20,13 @@ tic;
 
 %% Disparity Map
 % Specify path to scene folder containing img0 img1 and calib
-scene_path = 'test/sword';
+scenes = {'test/motorcycle', 'test/playground', ...
+          'test/sword',      'test/terrace'   , ...
+          'test/teddy'};
+scene_path = scenes{1};
  
 % Calculate disparity map and Euclidean motion
-[D, R, T] = disparity_map(scene_path, 'do_debug', true);
+[D, R, T] = disparity_map(scene_path, 'do_debug', true,'method', 'jo');
 
 %% Validation
 % Specify path to ground truth disparity map
@@ -43,11 +48,3 @@ disp('Rotation R:'); disp(R);
 disp('Translation T:'); disp(T);
 disp('PSNR p: '); disp(p);
 disp('Elapsed Time: '); disp(elapsed_time);
-
-
-%% Display Disparity
-figure('Name','Disparity Map','NumberTitle','off');
-title 'Disparity Map';
-imshow(D, [0 255]);
-colormap(gca,jet);
-colorbar;
