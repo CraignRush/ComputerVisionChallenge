@@ -1,6 +1,5 @@
 /*==========================================================
  * zncc.c
- *
  *========================================================*/
 
 #include "mex.h"
@@ -60,27 +59,18 @@ void zncc(unsigned char *rightImage, unsigned char* leftImage, int corrWindowSiz
     tempCorrScore = (int *) mxGetData(tempCorrScore_);
     
     int regionSize = (2*win+1)*(2*win+1);
-    //unsigned char *regionLeft = (unsigned  char *) calloc(regionSize,sizeof(unsigned char));
-    //unsigned char *regionRight = (unsigned  char *) calloc(regionSize,sizeof(unsigned char));
-    //int *tempCorrScore = (int *) calloc(regionSize,sizeof(int));
+    
     
     for(int i=win; i < nrows-win; i++) {
         // For every row in Left Image
         for(int j=win; j < ncols-win-dMax; j++) {
-            //% For every column in Left Image
-            //% Initialize the temporary variable to hold the previous
-            //% correlation score
+            // For every column in Left Image
+
             double prevcorrScore = 0.0;
 
-            // % Initialize the temporary variable to store the best matched
-            // % disparity score
             int bestMatchSoFar = dMin;
             
             for(int d=dMin; d < dMax; d+=5){
-                
-                //% For every disparity value in x-direction
-                //% Construct a region with window around
-                //% central/selected pixel in left image
                 
                 double meanLeft = 0.0;
                 for(int r1 = i-win; r1 < i+win; r1++){
@@ -91,9 +81,6 @@ void zncc(unsigned char *rightImage, unsigned char* leftImage, int corrWindowSiz
                 }
                 meanLeft /= regionSize;
             
-                //% Construct a region with window around
-                //% central/selected pixel in right image
-                // regionRight=rightImage(i-win : i+win, j+d-win : j+d+ win);
                 
                 double meanRight = 0.0;
                 for(int r1 = i-win; r1 < i+win; r1++){
@@ -104,18 +91,8 @@ void zncc(unsigned char *rightImage, unsigned char* leftImage, int corrWindowSiz
                 }
                 meanRight /= regionSize;
                 
-                //% Calculate the local mean in left region
-                //meanLeft = mean2(regionLeft);
-                
-                //% Calculate the local mean in right region
-                //meanRight = mean2(regionRight);
-                
-                //% Initialize the variable to store temporarily the
-                //% correlation scores
-                
-                
-                //% Calculate the correlation score
-                // % Calculate the term in the denominator (var: den)
+
+                // Calculate the correlation score
                 double den = 0.0, sum1=0.0, sum2=0.0;
                 for(int k = 0; k < regionSize; k++){
                     sum1 += (regionLeft[k]-meanLeft)*(regionLeft[k]-meanLeft);
@@ -124,13 +101,8 @@ void zncc(unsigned char *rightImage, unsigned char* leftImage, int corrWindowSiz
                 }
                 den = sqrt(sum1*sum2);
                 
-                //tempCorrScore = (regionLeft - meanLeft).*(regionRight - meanRight)/den;
-
-                //% Compute the final score by summing the values in
-                //% tempCorrScore,
-                //% and store it in a temporary variable signifying the
-                //% distance
-                //% (var: corrScore)
+               
+                // Compute the final score by summing the values in
                 double corrScore = 0.0;
                 for(int k = 0; k < regionSize; k++){
                     corrScore += tempCorrScore[k];
@@ -138,16 +110,14 @@ void zncc(unsigned char *rightImage, unsigned char* leftImage, int corrWindowSiz
                 corrScore /= den;
 
                 if(corrScore>prevcorrScore){
-                    //% If the current disparity value is greater
-                    //% than
-                    //% previous one, then swap them
+                    // Update
                     prevcorrScore=corrScore;
                     bestMatchSoFar=d;
                 }
                 
                 
             }
-            //% Store the final matched value in variable dispMap
+            // Store the final matched value in variable dispMap
             dispMap[i+j*nrows] = bestMatchSoFar;
         }
     }
