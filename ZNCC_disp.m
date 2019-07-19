@@ -2,9 +2,9 @@
 
 %% Specify vars
 addpath(genpath('lib'));
-addpath(genpath('denseMatch'));
 scene_path = {'test/motorcycle', 'test/playground', ...
     'test/sword',      'test/terrace'   };
+saveFiles = 0;
 
 for i = 1%1:length(scene_path)
     %% Load images
@@ -32,7 +32,7 @@ for i = 1%1:length(scene_path)
     %         ceil(end/2+end*filter_percentage)) = 0;
     %     im1g_fil = uint8(real(ifft2(fftshift(im1g_fft_fil))));
     
-    for j = 1
+    for j = 0
         
         switch j
             case 0 
@@ -68,7 +68,7 @@ for i = 1%1:length(scene_path)
         %% Compute Disparity
         % window = 5;
         % disparity_max = 30; %200*scale;
-        [dispMap, timeTaken]=denseMatch_mex(im0_small, im1_small, window,0, disparity_max, 'ZNCC');
+        [dispMap, timeTaken]=denseMatch(im0_small, im1_small, window,0, disparity_max, 'ZNCC');
         
         %% Bringing time into a readable format
         fprintf("Time taken: %02.0f:%02.0f:%02.3f \n",timeTaken/3600,timeTaken/60,mod(timeTaken,60));
@@ -114,6 +114,8 @@ for i = 1%1:length(scene_path)
 %         
 %         figure;imagesc(disp__fil_norm); colormap hot; colorbar;
 %         figure;imagesc(disp_big);
+
+if saveFiles
         %% Create storage folder
         folder = ['gen_data_s=' num2str(scale) '_w=' num2str(window)...
             '_mdisp=' num2str(disparity_max)];
@@ -135,6 +137,6 @@ for i = 1%1:length(scene_path)
         
         %% Save Figure as .pdf
         print(fullfile(path, 'dmap.pdf'),'-dpdf','-bestfit');
-        
+end
     end
 end
