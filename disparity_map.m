@@ -91,41 +91,9 @@ function [D, R, T] = disparity_map(scene_path, varargin)
     
     %% Correspondence estimation - Find Match
 
-    fm_method = 'NN';
-    if strcmp(method, 'matlabgrader')
-        correspondence = correspondence_matlabgrader(im0g,im1g,feature0, feature1);
-    elseif strcmp(method,'jo')
-        correspondence = punkt_korrespondenzen_jo(im0g,im1g,feature0,feature1,'min_corr', 0.99, 'do_plot', false);
-    elseif strcmp(method,'daniel')
-        sig0 = correspondence_daniel(im0g,im0,feature0,'gray_weight',6,'pos_weight',1);
-        sig1 = correspondence_daniel(im1g,im1,feature1,'gray_weight',6,'pos_weight',1);
-        fm_method = 'NN';
-    elseif strcmp(method,'ct')
-        sig0 = correspondence_ct(im0g,feature0,'window_size',9);
-        sig1 = correspondence_ct(im1g,feature1,'window_size',9);
-        fm_method = 'Hamming';
-    elseif strcmp(method,'lpm')
-        sig0 = correspondence_lpm(im0g,feature0);
-        sig1 = correspondence_lpm(im1g,feature1);
-        fm_method = 'NN';
-    elseif strcmp(method,'all')
-        correspondence = [ ...
-            correspondence_matlabgrader(im0g,im1g,feature0, feature1), ...
-            punkt_korrespondenzen_jo(im0g,im1g,feature0,feature1), ...
-            find_matches(correspondence_daniel(im0g,im0,feature0,...
-               'gray_weight',6,'pos_weight',1),...
-               correspondence_daniel(im1g,im1,feature1,...
-               'gray_weight',6,'pos_weight',1),feature0,feature1,'NN'), ...
-            find_matches(correspondence_lpm(im0g,feature0), ...
-               correspondence_lpm(im1g,feature1),feature0,feature1,'NN')...
-         ];   
-    else
-        error('Undefined method!');
-    end
     
-    if ~exist('correspondence','var')
-        correspondence = find_matches(sig0,sig1,feature0,feature1,fm_method);
-    end
+    correspondence = punkt_korrespondenzen_jo(im0g,im1g,feature0,feature1,'min_corr', 0.85, 'do_plot', false);
+    
 
     %%
     if do_debug
@@ -146,7 +114,7 @@ function [D, R, T] = disparity_map(scene_path, varargin)
 
     %% Correspondence estimation - Find Robust Match
     %  Find robust correspondence point pairs with RANSAC-algorithm
-    correspondence = F_ransac(correspondence, 'tolerance', 0.04);
+    correspondence = F_ransac(correspondence, 'tolerance', 0.1);
     
     if do_debug
         tab = [tab,uitab(tabgp, 'Title', 'Correspondence (Robust)')];
@@ -182,7 +150,7 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         tax = [tax,axes('Parent', tab(end))];
         title '3D Reconstruction';
         hold on
-        for i = 1:length(P1)
+        for i = 1:size(P1,2)
             scatter3(tax(end),P1(1,i), P1(2,i), P1(3,i), '.k');
             text(tax(end),P1(1,i), P1(2,i), P1(3,i),num2str(i));
         end
@@ -270,5 +238,6 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         tax = [tax,axes('Parent', tab(end))];
         title '3D Reconstruction';
         surf(tax(end),I_3d);
+        colormap jet; colorbar
     end
 end

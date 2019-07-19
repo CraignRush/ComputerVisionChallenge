@@ -4,9 +4,9 @@
 addpath(genpath('lib'));
 scene_path = {'test/motorcycle', 'test/playground', ...
     'test/sword',      'test/terrace'   };
-saveFiles = 0;
+saveFiles = 1;
 
-for i = 1%1:length(scene_path)
+for i = 1:length(scene_path)
     %% Load images
     im0 = imread([scene_path{i} '/im0.png']);
     im0g= rgb_to_gray(im0);
@@ -32,7 +32,7 @@ for i = 1%1:length(scene_path)
     %         ceil(end/2+end*filter_percentage)) = 0;
     %     im1g_fil = uint8(real(ifft2(fftshift(im1g_fft_fil))));
     
-    for j = 0
+    for j = 2
         
         switch j
             case 0 
@@ -68,10 +68,10 @@ for i = 1%1:length(scene_path)
         %% Compute Disparity
         % window = 5;
         % disparity_max = 30; %200*scale;
-        [dispMap, timeTaken]=denseMatch(im0_small, im1_small, window,0, disparity_max, 'ZNCC');
+        dispMap = denseMatch(im0_small, im1_small, window,0, disparity_max, 'ZNCC');
         
         %% Bringing time into a readable format
-        fprintf("Time taken: %02.0f:%02.0f:%02.3f \n",timeTaken/3600,timeTaken/60,mod(timeTaken,60));
+        %fprintf("Time taken: %02.0f:%02.0f:%02.3f \n",timeTaken/3600,timeTaken/60,mod(timeTaken,60));
         
         %% Normalizing image to [0 255]
         disp_norm = uint8((dispMap - min(dispMap(:))) ./ max(dispMap - min(dispMap(:))) .* 255);
@@ -86,17 +86,17 @@ for i = 1%1:length(scene_path)
         
         %% Filter with Gaussian
         
-        n = numel(im0);
-        mu = 3; sigma = .3;
-        segment_length = 15;
-        
-        % Gaussian Filter
-        gaussian = @(x,mu,sigma) 1/(sigma*sqrt(2*pi))*exp(-1/2*((x-mu)/sigma).^2);
-        w = gaussian(-floor(segment_length/2):1:floor(segment_length/2),0,segment_length/5);
-        w = w/sum(w);
-        
-        disp_test = double(conv2(w,w,disp_big,'same'));
-        disp_test(disp_test < eps) = eps;
+%         n = numel(im0);
+%         mu = 3; sigma = .3;
+%         segment_length = 15;
+%         
+%         % Gaussian Filter
+%         gaussian = @(x,mu,sigma) 1/(sigma*sqrt(2*pi))*exp(-1/2*((x-mu)/sigma).^2);
+%         w = gaussian(-floor(segment_length/2):1:floor(segment_length/2),0,segment_length/5);
+%         w = w/sum(w);
+%         
+%         disp_test = double(conv2(w,w,disp_big,'same'));
+%         disp_test(disp_test < eps) = eps;
         
         %% Filter low pass
 %         disp_fft = fftshift(fft2(disp_big));         
