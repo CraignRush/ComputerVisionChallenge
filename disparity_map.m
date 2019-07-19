@@ -53,7 +53,7 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         tabgp = uitabgroup(fig);
         tab = uitab(tabgp, 'Title', 'Original');
         tax = axes('Parent', tab(end));
-        imshow([im0,im1],'Parent',tax(end));
+        imshow([im0,im1],'Parent',tax(end),'InitialMagnification','fit');
     end
     %% Create calibration variables
     evalc(cal);
@@ -213,11 +213,46 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         grid on;
     end
     
-    %% Calculate Disparity Map
-    im0g_scaled = interpolateImage(im0g,0.25);
-    im1g_scaled = interpolateImage(im1g,0.25);
-    D_ = sgbm(im0g_scaled, im1g_scaled);
+    %% Define Params
+    j = 1;
+    switch j
+            case 0 
+                %% Dummy Params
+                 scale = [100 150]; window = 3; disparity_max = 10;% < 30s
+            case 1
+                %% Fast Params
+                scale = [217 356]; window = 5; disparity_max = 30;% < 30s
+                
+            case 2
+                %% Medium Dense Params
+                scale = [434,713]; window = 15; disparity_max = 75;% < 5 min
+                
+            case 3
+                %% Very Dense Params
+                scale =[868, 1426] ; window = 35; disparity_max = 100;% ~ 2 h
+                
+            case 4
+                %% Ultra Dense Params
+                scale = 1; window = 49; disparity_max = 200;% ~ inf d
+                
+        end
+    
+    %% Resize Images
+        %% Shrink images
+        if prod(scale) < numel(im0g)
+            im0g_scaled = interpolateImage(im0g, scale);
+            im1g_scaled = interpolateImage(im1g, scale);
+        else
+            im0g_scaled = im0g;
+            im1g_scaled = im1g;
+        end
+    
+    %% Calculate Disparity Map 
+    [D_, timeTaken] = denseMatch(im0g_scaled, im1g_scaled,  window,0, disparity_max, 'ZNCC');
     D = interpolateImage(D_,size(im0g));
+    
+    %% Bringing time into a readable format
+        fprintf("Time taken: %02.0f:%02.0f:%02.3f \n",timeTaken/3600,timeTaken/60,mod(timeTaken,60));
     
     %% Scale disparity map
     scale_factor = 127 / max(abs(min(D,[],'all')),abs(max(D,[],'all')));
