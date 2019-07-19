@@ -248,17 +248,16 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         end
     
     %% Calculate Disparity Map 
-    [D_, timeTaken] = denseMatch(im0g_scaled, im1g_scaled,  window,0, disparity_max, 'ZNCC');
+    D_ = denseMatch(im0g_scaled, im1g_scaled,  window,0, disparity_max, 'ZNCC');
     D = interpolateImage(D_,size(im0g));
-    
-    %% Bringing time into a readable format
-        fprintf("Time taken: %02.0f:%02.0f:%02.3f \n",timeTaken/3600,timeTaken/60,mod(timeTaken,60));
-    
+
+    %% Depth Calculation
+    I_3d = cam1(1,1) * baseline ./ D; % baseline = norm(T,2)???
     %% Scale disparity map
     scale_factor = 127 / max(abs(min(D,[],'all')),abs(max(D,[],'all')));
     D = D * scale_factor + 127;
     
-    %% Plot disparity map
+    %% Plot disparity map and 3D scene
     if do_debug
         tab = [tab,uitab(tabgp, 'Title', 'Disparity')];
         tax = [tax,axes('Parent', tab(end))];
@@ -266,5 +265,10 @@ function [D, R, T] = disparity_map(scene_path, varargin)
         imshow(D,[0 255],'Parent',tax(end));
         colormap(tax(end),jet);
         colorbar;
+        
+        tab = [tab,uitab(tabgp, 'Title', '3D')];
+        tax = [tax,axes('Parent', tab(end))];
+        title '3D Reconstruction';
+        surf(tax(end),I_3d);
     end
 end
