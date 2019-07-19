@@ -39,9 +39,9 @@ for(i=1+win:1:nrLeft-win)
             % central/selected pixel in right image
             regionRight=rightImage(i-win : i+win, j+d-win : j+d+ win);
             % Calculate the local mean in left region
-            meanLeft = mean2(regionLeft);
+            meanLeft = mean(regionLeft,'all');
             % Calculate the local mean in right region
-            meanRight = mean2(regionRight);
+            meanRight = mean(regionRight,'all');
 
             % Calculate the correlation score
             % Calculate the term in the denominator (var: den)
