@@ -14,77 +14,92 @@ for i = 1:length(scene_path)
     im1g= rgb_to_gray(im1);
     
     %% Filter high pass
-    im0g_fft = fftshift(fft2(im0g));
-    im1g_fft = fftshift(fft2(im1g));
-    
-    filter_percentage = 0.05;
-    im0g_fft_fil = im0g_fft;
-    im0g_fft_fil(floor(end/2-end*filter_percentage):...
-        ceil(end/2+end*filter_percentage),...
-        floor(end/2-end*filter_percentage):...
-        ceil(end/2+end*filter_percentage)) = 0;
-    im0g_fil = uint8(real(ifft2(fftshift(im0g_fft_fil))));
-    
-    im1g_fft_fil = im1g_fft;
-    im1g_fft_fil(floor(end/2-end*filter_percentage):...
-        ceil(end/2+end*filter_percentage),...
-        floor(end/2-end*filter_percentage):...
-        ceil(end/2+end*filter_percentage)) = 0;
-    im1g_fil = uint8(real(ifft2(fftshift(im1g_fft_fil))));
-    
-    %% Fast Params
-    %scale = 0.1; window = 5; disparity_max = 30;% ~ 15s
-    
-    %% Medium Dense Params
-    scale = 0.3; window = 17; disparity_max = 80;% ~ 15 min
-    
-    %% Very Dense Params
-    %scale = 0.75; window = 35; disparity_max = 100;% ~ ? h
-    
-    %% Ultra Dense Params
-    %scale = 1; window = 49; disparity_max = 200;% ~ ? h
-    
-    %% Shrink images
-    im0_small = interpolateImage(im0g_fil,scale);
-    im1_small = interpolateImage(im1g_fil,scale);
-    
-    %% Compute Disparity
-    % window = 5;
-    % disparity_max = 30; %200*scale;
-    [dispMap, timeTaken]=denseMatch(im0_small, im1_small, window,0, disparity_max, 'ZNCC');
-    
-    %% Bringing time into a readable format
-    fprintf("Time taken: %02.0f:%02.0f:%02.3f \n",timeTaken/3600,timeTaken/60,mod(timeTaken,60));
-    
-    %% Normalizing image to [0 255]
-    disp_norm = uint8((dispMap - min(dispMap(:))) ./ max([dispMap - min(dispMap(:))]) .* 255);
-    
-    %% Displaying originally computed disparity map
-    figure;subplot(131); imagesc(disp_norm); title('Disparity Small'); colormap hot;
-    
-    %% Scale up
-    disp_big = interpolateImage(disp_norm,size(im0g));
-    subplot(1,3,2:3); imagesc([im0g disp_big]);title('Disparity Normal with Reference'); colormap hot;
-    
-    %% Create storage folder
-    folder = ['gen_data_s=' num2str(scale) '_w=' num2str(window)...
-        '_mdisp=' num2str(disparity_max)];
-    if ~exist(folder,'dir')
-        mkdir(folder);
+    %     im0g_fft = fftshift(fft2(im0g));
+    %     im1g_fft = fftshift(fft2(im1g));
+    %
+    %     filter_percentage = 0.05;
+    %     im0g_fft_fil = im0g_fft;
+    %     im0g_fft_fil(floor(end/2-end*filter_percentage):...
+    %         ceil(end/2+end*filter_percentage),...
+    %         floor(end/2-end*filter_percentage):...
+    %         ceil(end/2+end*filter_percentage)) = 0;
+    %     im0g_fil = uint8(real(ifft2(fftshift(im0g_fft_fil))));
+    %
+    %     im1g_fft_fil = im1g_fft;
+    %     im1g_fft_fil(floor(end/2-end*filter_percentage):...
+    %         ceil(end/2+end*filter_percentage),...
+    %         floor(end/2-end*filter_percentage):...
+    %         ceil(end/2+end*filter_percentage)) = 0;
+    %     im1g_fil = uint8(real(ifft2(fftshift(im1g_fft_fil))));
+    for j = 2
+        
+        switch j
+            case 1
+                %% Fast Params
+                scale = [217 356]; window = 5; disparity_max = 30;% < 30s
+                
+            case 2
+                %% Medium Dense Params
+                scale = [434,713]; window = 15; disparity_max = 75;% < 5 min
+                
+            case 3
+                %% Very Dense Params
+                scale =[868, 1426] ; window = 35; disparity_max = 100;% ~ 2 h
+                
+            case 4
+                %% Ultra Dense Params
+                scale = 1; window = 49; disparity_max = 200;% ~ inf d
+                
+        end
+        
+        %% Shrink images
+        if prod(scale) < numel(im0g)
+            im0_small = interpolateImage(im0g, scale);
+            im1_small = interpolateImage(im1g, scale);
+        else
+            im0_small = im0g;
+            im1_small = im1g;
+        end
+        
+        %% Compute Disparity
+        % window = 5;
+        % disparity_max = 30; %200*scale;
+        [dispMap, timeTaken]=denseMatch(im0_small, im1_small, window,0, disparity_max, 'ZNCC');
+        
+        %% Bringing time into a readable format
+        fprintf("Time taken: %02.0f:%02.0f:%02.3f \n",timeTaken/3600,timeTaken/60,mod(timeTaken,60));
+        
+        %% Normalizing image to [0 255]
+        disp_norm = uint8((dispMap - min(dispMap(:))) ./ max(dispMap - min(dispMap(:))) .* 255);
+        
+        %% Displaying originally computed disparity map
+        figure;subplot(131); imagesc(disp_norm); title('Disparity Small'); colormap hot;
+        
+        %% Scale up
+        disp_big = interpolateImage(disp_norm,size(im0g));
+        subplot(1,3,2:3); imagesc([im0g disp_big]);title('Disparity Normal with Reference'); colormap hot;
+        
+        %% Create storage folder
+        folder = ['gen_data_s=' num2str(scale) '_w=' num2str(window)...
+            '_mdisp=' num2str(disparity_max)];
+        if ~exist(folder,'dir')
+            mkdir(folder);
+        end
+        
+        sub = strsplit(scene_path{i},'/');
+        path = [folder '/' sub{2}];
+        if ~exist(path,'dir')
+            mkdir(path);
+        end
+        
+        %% Save Workspace
+        save(fullfile(path, 'ws.mat'));
+        
+        %% Save Figure as MATLAB figure
+        savefig(fullfile(path, 'dmap.fig'));
+        
+        %% Save Figure as .pdf
+        print(fullfile(path, 'dmap.pdf'),'-dpdf','-bestfit');
+        
     end
-    
-    sub = strsplit(scene_path{i},'/');
-    path = [folder '/' sub{2}];
-    if ~exist(path,'dir')
-        mkdir(path);
-    end
-    
-    %% Save Workspace
-    save(fullfile(path, 'ws.mat'));
-    
-    %% Save Figure as MATLAB figure
-    savefig(fullfile(path, 'dmap.fig'));
-    
-    %% Save Figure as .pdf
-    print(fullfile(path, 'dmap.pdf'),'-dpdf','-bestfit');
 end
